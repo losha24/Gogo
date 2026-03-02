@@ -1,9 +1,12 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
+
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>מנהל קבוצת כדורגל</title>
+
+<title>⚽ מנהל קבוצת כדורגל</title>
 
 <style>
 
@@ -17,79 +20,128 @@ text-align:center;
 button{
 padding:10px;
 margin:5px;
-font-size:16px;
-cursor:pointer;
+font-size:15px;
+border-radius:8px;
+border:none;
+background:#2c2c2c;
+color:white;
+}
+
+button:hover{
+background:#444;
 }
 
 .card{
 background:#1c1c1c;
-padding:10px;
+padding:12px;
 margin:10px;
-border-radius:10px;
+border-radius:12px;
 }
 
-.stats{
+.players{
 display:flex;
-justify-content:space-around;
 flex-wrap:wrap;
+justify-content:center;
+gap:10px;
 }
 
-.star{
+.player{
+background:#222;
+padding:10px;
+border-radius:10px;
+width:140px;
+}
+
+.bar{
+height:6px;
+background:#333;
+border-radius:5px;
+margin-top:5px;
+}
+
+.fill{
+height:6px;
+background:#3aa3ff;
+border-radius:5px;
+}
+
+.yellow{
 color:gold;
 }
 
 .blue{
-color:#3aa3ff;
+color:#4cb3ff;
 }
 
 </style>
+
 </head>
 
 <body>
 
-<h1>⚽ מנהל קבוצת כדורגל</h1>
+<h2>⚽ מנהל קבוצת כדורגל</h2>
 
 <div class="card">
 
-כסף: ₪ <span id="money"></span><br>
-משחקים: <span id="games"></span><br>
-ליגה: <span id="league"></span><br>
-אליפויות: <span id="champ"></span>
+💰 כסף: ₪ <span id="money"></span><br>
+🎮 משחקים: <span id="games"></span><br>
+🏆 ליגה: <span id="league"></span><br>
+🥇 אליפויות: <span id="champ"></span><br>
+🤝 ספונסר: <span id="sponsorName"></span>
 
 </div>
 
-<div class="card stats">
+<div class="card players">
 
-<div>
-התקפה<br>
-<span id="attackStars"></span>
+<div class="player">
+
+התקפה
+
+<div id="attackStars"></div>
+
+<div class="bar">
+<div id="attackBar" class="fill"></div>
 </div>
 
-<div>
-הגנה<br>
-<span id="defStars"></span>
-</div>
-
-<div>
-כושר<br>
-<span id="fitStars"></span>
-</div>
+<button onclick="train('attack')">אימון</button>
 
 </div>
 
-<div class="card">
+<div class="player">
 
-<button onclick="train('attack')">אימון התקפה</button>
-<button onclick="train('def')">אימון הגנה</button>
-<button onclick="train('fit')">אימון כושר</button>
+הגנה
+
+<div id="defStars"></div>
+
+<div class="bar">
+<div id="defBar" class="fill"></div>
+</div>
+
+<button onclick="train('def')">אימון</button>
+
+</div>
+
+<div class="player">
+
+כושר
+
+<div id="fitStars"></div>
+
+<div class="bar">
+<div id="fitBar" class="fill"></div>
+</div>
+
+<button onclick="train('fit')">אימון</button>
+
+</div>
 
 </div>
 
 <div class="card">
 
 <button onclick="playMatch()">משחק שבועי</button>
+<button onclick="chooseSponsor()">בחר ספונסר</button>
 <button onclick="showLeague()">טבלת ליגה</button>
-<button onclick="showSeasons()">עונות</button>
 <button onclick="resetGame()">איפוס</button>
 
 </div>
@@ -107,6 +159,7 @@ money:1000,
 games:0,
 league:1,
 champ:0,
+season:1,
 attack:10,
 def:10,
 fit:10,
@@ -114,10 +167,17 @@ wins:0,
 draw:0,
 loss:0,
 points:0,
-sponsor:100
+sponsor:0,
+sponsorName:"אין"
 }
 
 }
+
+const sponsors=[
+{name:"Local Shop",bonus:100},
+{name:"Tech Company",bonus:200},
+{name:"Mega Corp",bonus:350}
+]
 
 function save(){
 
@@ -125,15 +185,18 @@ localStorage.setItem("team",JSON.stringify(data))
 
 }
 
-function stars(value){
+function starView(value){
 
-let yellow=Math.floor(value/10)
+let yellow=Math.floor(value/5)
+
 let blue=Math.floor(yellow/5)
+
 yellow=yellow%5
 
 let html=""
 
-for(let i=0;i<yellow;i++) html+="⭐"
+for(let i=0;i<yellow;i++) html+="<span class='yellow'>⭐</span>"
+
 for(let i=0;i<blue;i++) html+="<span class='blue'>🔵</span>"
 
 return html
@@ -142,14 +205,19 @@ return html
 
 function update(){
 
-document.getElementById("money").innerText=data.money
-document.getElementById("games").innerText=data.games
-document.getElementById("league").innerText=data.league
-document.getElementById("champ").innerText=data.champ
+money.innerText=data.money
+games.innerText=data.games
+league.innerText=data.league
+champ.innerText=data.champ
+sponsorName.innerText=data.sponsorName
 
-document.getElementById("attackStars").innerHTML=stars(data.attack)
-document.getElementById("defStars").innerHTML=stars(data.def)
-document.getElementById("fitStars").innerHTML=stars(data.fit)
+attackStars.innerHTML=starView(data.attack)
+defStars.innerHTML=starView(data.def)
+fitStars.innerHTML=starView(data.fit)
+
+attackBar.style.width=(data.attack%25)*4+"%"
+defBar.style.width=(data.def%25)*4+"%"
+fitBar.style.width=(data.fit%25)*4+"%"
 
 save()
 
@@ -157,7 +225,7 @@ save()
 
 function train(type){
 
-let cost=(data[type]/10)*50
+let cost=(data[type]/5)*40
 
 if(data.money<cost){
 
@@ -167,7 +235,7 @@ return
 }
 
 data.money-=cost
-data[type]+=10
+data[type]+=5
 
 update()
 
@@ -175,16 +243,12 @@ update()
 
 function playMatch(){
 
-let team=data.attack+data.def+data.fit
-
-let enemy=Math.random()*team*1.2
-
 let goals=Math.floor(Math.random()*5)
 let enemyGoals=Math.floor(Math.random()*5)
 
-let moneyReward=200+data.sponsor
+let income=200+data.sponsor
 
-data.money+=moneyReward
+data.money+=income
 
 data.games++
 
@@ -217,6 +281,11 @@ data.money+=500
 if(data.games%10==0){
 
 data.league++
+data.season++
+data.sponsor=0
+data.sponsorName="אין"
+
+alert("עונה חדשה - בחר ספונסר")
 
 }
 
@@ -226,31 +295,49 @@ data.champ++
 
 }
 
-document.getElementById("result").innerHTML=
-
-"תוצאה: "+goals+" - "+enemyGoals+
-"<br>רווח: ₪"+moneyReward
+result.innerHTML="תוצאה "+goals+"-"+enemyGoals+"<br>רווח ₪"+income
 
 update()
+
+}
+
+function chooseSponsor(){
+
+if(data.sponsor!=0){
+
+alert("כבר נבחר ספונסר לעונה")
+return
+
+}
+
+let list="בחר ספונסר:\n"
+
+sponsors.forEach((s,i)=>{
+
+list+=i+" - "+s.name+" ₪"+s.bonus+"\n"
+
+})
+
+let choice=prompt(list)
+
+if(sponsors[choice]){
+
+data.sponsor=sponsors[choice].bonus
+data.sponsorName=sponsors[choice].name
+
+update()
+
+}
 
 }
 
 function showLeague(){
 
 alert(
-"נצחונות: "+data.wins+
-"\nתיקו: "+data.draw+
-"\nהפסדים: "+data.loss+
-"\nנקודות: "+data.points
-)
-
-}
-
-function showSeasons(){
-
-alert(
-"ליגות: "+data.league+
-"\nאליפויות: "+data.champ
+"נצחונות "+data.wins+
+"\nתיקו "+data.draw+
+"\nהפסדים "+data.loss+
+"\nנקודות "+data.points
 )
 
 }
