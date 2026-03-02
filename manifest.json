@@ -1,7 +1,7 @@
 {
-  "name": "Go-Go",
+  "name": "Go-Go Soccer Game",
   "short_name": "Go-Go",
-  "start_url": "index.html",
+  "start_url": "/index.html",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#22c55e",
@@ -9,11 +9,6 @@
     {
       "src": "soccer_icon_192.png",
       "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "soccer_icon_512.png",
-      "sizes": "512x512",
       "type": "image/png"
     }
   ]
