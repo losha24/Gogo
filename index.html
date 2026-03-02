@@ -1,522 +1,275 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Go-Go Manager</title>
-
+<title>Go-Go</title>
+<link rel="icon" type="image/png" sizes="192x192" href="soccer_icon_192.png">
 <style>
-
-body{
-font-family:Arial;
-background:#0f172a;
-color:white;
-text-align:center;
-padding:20px;
-}
-
-button{
-padding:8px 14px;
-margin:4px;
-border:none;
-border-radius:8px;
-font-weight:bold;
-cursor:pointer;
-}
-
-.primary{background:#22c55e;color:white}
-.train{background:#3b82f6;color:white}
-.sell{background:#ef4444;color:white}
-
-.players{
-display:grid;
-grid-template-columns:repeat(3,1fr);
-gap:6px;
-max-width:520px;
-margin:auto;
-}
-
-.card{
-background:#1e293b;
-padding:6px;
-border-radius:8px;
-font-size:12px;
-}
-
-.table{
-background:#1e293b;
-padding:10px;
-border-radius:8px;
-margin:10px auto;
-max-width:420px;
-}
-
-.starY{color:#facc15}
-.starB{color:#38bdf8}
-
-.market{
-display:grid;
-grid-template-columns:repeat(3,1fr);
-gap:8px;
-max-width:520px;
-margin:auto;
-}
-
-footer{
-margin-top:30px;
-font-size:12px;
-opacity:0.7;
-}
-
+body { font-family: Arial, sans-serif; background: #0f172a; color: white; text-align: center; margin: 0; padding: 20px; }
+.logo { width:100px; margin-bottom:10px; }
+button { padding: 10px 20px; margin: 5px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+.primary { background: #22c55e; color: white; }
+.danger { background: #ef4444; color: white; }
+.train-btn { background: #3b82f6; color: white; display:flex; align-items:center; gap:5px; }
+.train-row { display:flex; justify-content:center; flex-wrap:wrap; margin-bottom:10px; }
+.player { background: #334155; margin: 5px auto; padding: 8px; border-radius: 6px; font-size: 14px; max-width: 350px; text-align:right; }
+#budget { font-weight: bold; }
+.green { color: #22c55e; }
+.red { color: #ef4444; }
+.bonus { color: #facc15; font-weight:bold; font-size:16px; }
+.table { background:#1e293b; padding:10px; border-radius:8px; margin:10px auto; max-width:400px; text-align:right; }
+footer { margin-top:20px; font-size:12px; color:#aaa; }
 </style>
 </head>
-
 <body>
 
-<h1>⚽ Go-Go Manager</h1>
+<img src="soccer_logo.png" alt="לוגו Go-Go" class="logo">
 
 <div id="setup">
-
-<input id="teamName" placeholder="שם קבוצה">
-
-<br><br>
-
-<button class="primary" onclick="createTeam()">צור קבוצה</button>
-
+    <input type="text" id="teamName" placeholder="הכנס שם קבוצה">
+    <br>
+    <button class="primary" onclick="createTeam()">צור קבוצה</button>
 </div>
 
-<div id="game" style="display:none">
+<div id="game" style="display:none;">
+    <h2 id="teamTitle"></h2>
+    <p>תקציב: $<span id="budget"></span></p>
+    
+    <div id="players"></div>
 
-<h2 id="teamTitle"></h2>
+    <h3>אימונים</h3>
+    <div class="train-row">
+        <button class="train-btn" onclick="train('attack')">⚔️ התקפה</button>
+        <button class="train-btn" onclick="train('defense')">🛡️ הגנה</button>
+        <button class="train-btn" onclick="train('fitness')">❤️ כושר</button>
+    </div>
 
-<p>תקציב: $<span id="budget"></span></p>
+    <div style="margin:10px 0;">
+        <button class="primary" onclick="playMatch()">⚽ משחק שבועי</button>
+    </div>
+    <div id="matchResult"></div>
 
-<h3>שחקנים</h3>
+    <h3>טבלת ליגה</h3>
+    <div id="leagueTable" class="table"></div>
 
-<div id="players" class="players"></div>
+    <h3>טבלת עונות</h3>
+    <div id="seasonTable" class="table"></div>
 
-<h3>אימונים</h3>
+    <h3>אליפויות</h3>
+    <div id="championshipTable" class="table"></div>
 
-<button class="train" onclick="train('attack')">⚔ התקפה</button>
-<button class="train" onclick="train('defense')">🛡 הגנה</button>
-<button class="train" onclick="train('fitness')">❤️ כושר</button>
+    <h3>ספונסר לעונה</h3>
+    <div>
+        <select id="sponsorSelect">
+            <option value="0">בחר ספונסר</option>
+            <option value="10">Tesla (+10%)</option>
+            <option value="20">Nike (+20%)</option>
+            <option value="30">Adidas (+30%)</option>
+            <option value="50">Red Bull (+50%)</option>
+        </select>
+        <button class="primary" onclick="applySponsor()">בחר ספונסר</button>
+        <p id="currentSponsor"></p>
+    </div>
 
-<br><br>
-
-<button class="primary" onclick="playMatch()">⚽ משחק שבועי</button>
-
-<div id="matchResult"></div>
-
-<div id="leagueTable" class="table"></div>
-
-<div id="seasonTable" class="table"></div>
-
-<div id="champTable" class="table"></div>
-
-<h3>שוק שחקנים</h3>
-
-<div id="market" class="market"></div>
-
-<button onclick="generateMarket()">🔄 רענן שוק</button>
-
-<br><br>
-
-<button onclick="resetGame()">איפוס משחק</button>
-
+    <br>
+    <button class="danger" onclick="resetGame()">איפוס משחק</button>
 </div>
 
-<footer>
-
-© Alexsei Zavodisker
-
-</footer>
+<footer>© 2026 Alexsei Zavodisker</footer>
 
 <script>
+// פונקציות אקראיות
+function randomStat(){ return Math.floor(Math.random()*30)+1; }
+function randomTrain(){ return (Math.random()*2.5+0.5).toFixed(1); }
 
-function randomStat(){
-return Math.floor(Math.random()*100)
-}
-
-function stars(val){
-
-let yellow=Math.floor(val/10)
-
-let blue=Math.floor(yellow/10)
-
-yellow=yellow%10
-
-let html=""
-
-for(let i=0;i<blue;i++){
-html+="<span class='starB'>🔵</span>"
-}
-
-for(let i=0;i<yellow;i++){
-html+="<span class='starY'>⭐</span>"
-}
-
-return html
-}
-
-function playerValue(p){
-return Math.round((p.attack+p.defense+p.fitness)*1000)
+// כוכבים: צהוב = 10 נק', כחול = 5 צהובים
+function starsColored(val){
+    let yellow = Math.floor(val/10);
+    let blue = Math.floor(yellow/5);
+    yellow = yellow%5;
+    return '🔷'.repeat(blue)+'⭐'.repeat(yellow);
 }
 
 function createTeam(){
+    const name=document.getElementById("teamName").value;
+    if(!name) return alert("אנא הכנס שם קבוצה");
 
-let name=teamName.value
+    let players=[];
+    for(let i=1;i<=11;i++){
+        let attack=randomStat(), defense=randomStat(), fitness=randomStat();
+        let value=Math.round((attack+defense+fitness)*1000);
+        players.push({id:i,attack,defense,fitness,value});
+    }
 
-let players=[]
+    const gameData={
+        teamName:name,
+        budget:100000,
+        players:players,
+        league:{played:0,won:0,draw:0,lost:0,points:0},
+        seasonsPlayed:0,
+        championships:0,
+        seasonHistory:[],
+        sponsor:0
+    };
 
-for(let i=1;i<=11;i++){
-
-players.push({
-id:i,
-attack:randomStat(),
-defense:randomStat(),
-fitness:randomStat()
-})
-
-}
-
-let data={
-teamName:name,
-budget:100000,
-players:players,
-league:{played:0,won:0,draw:0,lost:0,points:0},
-seasons:0,
-championships:0
-}
-
-localStorage.setItem("gogo",JSON.stringify(data))
-
-generateMarket()
-
-loadGame()
-
+    localStorage.setItem("miniFootball",JSON.stringify(gameData));
+    loadGame();
 }
 
 function loadGame(){
+    const data=JSON.parse(localStorage.getItem("miniFootball"));
+    if(!data) return;
 
-let data=JSON.parse(localStorage.getItem("gogo"))
-if(!data)return
+    document.getElementById("setup").style.display="none";
+    document.getElementById("game").style.display="block";
 
-setup.style.display="none"
-game.style.display="block"
+    let budgetSpan=document.getElementById("budget");
+    budgetSpan.innerText=data.budget;
+    budgetSpan.className=data.budget>=0?"green":"red";
 
-teamTitle.innerText=data.teamName
+    document.getElementById("teamTitle").innerText=data.teamName;
 
-budget.innerText=Math.round(data.budget)
+    const playersDiv=document.getElementById("players");
+    playersDiv.innerHTML="";
+    data.players.forEach(p=>{
+        playersDiv.innerHTML+=`
+        <div class="player">
+        שחקן ${p.id} | ⚔️ ${starsColored(p.attack)} | 🛡️ ${starsColored(p.defense)} | ❤️ ${starsColored(p.fitness)} | 💰 $${p.value}
+        </div>`;
+    });
 
-drawPlayers(data)
-
-updateTables(data)
-
+    updateLeagueTable(data.league);
+    updateSeasonTable(data);
+    document.getElementById("championshipTable").innerText=`אליפויות: ${data.championships}`;
+    document.getElementById("currentSponsor").innerText=data.sponsor>0?`ספונסר נבחר לעונה: +${data.sponsor}%`:'';
 }
 
-function drawPlayers(data){
-
-players.innerHTML=""
-
-data.players.forEach((p,index)=>{
-
-players.innerHTML+=`
-
-<div class="card">
-
-שחקן ${index+1}
-
-<br>
-
-⚔ ${stars(p.attack)}
-
-<br>
-
-🛡 ${stars(p.defense)}
-
-<br>
-
-❤️ ${stars(p.fitness)}
-
-<br>
-
-$${playerValue(p)}
-
-<br>
-
-<button class="sell" onclick="sellPlayer(${index})">מכור</button>
-
-</div>
-
-`
-
-})
-
-}
-
-function sellPlayer(i){
-
-let data=JSON.parse(localStorage.getItem("gogo"))
-
-let value=playerValue(data.players[i])
-
-data.budget+=value*0.8
-
-data.players.splice(i,1)
-
-localStorage.setItem("gogo",JSON.stringify(data))
-
-loadGame()
-
-}
+const TRAIN_COST=3000;
 
 function train(type){
+    let data=JSON.parse(localStorage.getItem("miniFootball"));
+    if(!data) return;
+    if(data.budget<TRAIN_COST) return alert("אין מספיק כסף לאימון!");
 
-let data=JSON.parse(localStorage.getItem("gogo"))
+    data.players.forEach(p=>{
+        let inc=parseFloat(randomTrain());
+        if(type==="attack") p.attack=Math.min(p.attack+inc,30);
+        if(type==="defense") p.defense=Math.min(p.defense+inc,30);
+        if(type==="fitness") p.fitness=Math.min(p.fitness+inc,30);
+        p.value=Math.round((p.attack+p.defense+p.fitness)*1000);
+    });
 
-let cost=3000
-
-if(data.budget<cost)return
-
-data.players.forEach(p=>{
-
-let inc=Math.random()*5
-
-if(type=="attack")p.attack+=inc
-if(type=="defense")p.defense+=inc
-if(type=="fitness")p.fitness+=inc
-
-})
-
-data.budget-=cost
-
-localStorage.setItem("gogo",JSON.stringify(data))
-
-loadGame()
-
+    data.budget-=TRAIN_COST;
+    localStorage.setItem("miniFootball",JSON.stringify(data));
+    loadGame();
 }
 
-function rival(level){
-
-let arr=[]
-
-for(let i=1;i<=11;i++){
-
-arr.push({
-attack:randomStat()+level*5,
-defense:randomStat()+level*5,
-fitness:randomStat()+level*5
-})
-
-}
-
-return arr
-
-}
-
-function power(players){
-
-let total=0
-
-players.forEach(p=>{
-total+=p.attack+p.defense+p.fitness
-})
-
-return total
-
+function generateRival(week){
+    let factor=1+week*0.05;
+    let players=[];
+    for(let i=1;i<=11;i++){
+        players.push({attack:Math.min(randomStat()*factor,30),defense:Math.min(randomStat()*factor,30),fitness:Math.min(randomStat()*factor,30)});
+    }
+    return players;
 }
 
 function playMatch(){
+    let data=JSON.parse(localStorage.getItem("miniFootball"));
+    if(!data) return;
 
-let data=JSON.parse(localStorage.getItem("gogo"))
+    let rival=generateRival(data.league.played);
 
-let rivalTeam=rival(data.league.played)
+    let playerPower={attack:0,defense:0,fitness:0};
+    let rivalPower={attack:0,defense:0,fitness:0};
 
-let ps=Math.floor(Math.random()*5*(power(data.players)/400))
+    data.players.forEach(p=>{playerPower.attack+=p.attack;playerPower.defense+=p.defense;playerPower.fitness+=p.fitness;});
+    rival.forEach(p=>{rivalPower.attack+=p.attack;rivalPower.defense+=p.defense;rivalPower.fitness+=p.fitness;});
 
-let rs=Math.floor(Math.random()*5*(power(rivalTeam)/400))
+    function calcScore(a,d,f){ let base=a*0.5+f*0.3-d*0.2; base=Math.max(base,0); return Math.min(Math.floor(Math.random()*6*(base/100)),5);}
+    let playerScore=calcScore(playerPower.attack,rivalPower.defense,playerPower.fitness);
+    let rivalScore=calcScore(rivalPower.attack,playerPower.defense,rivalPower.fitness);
 
-data.league.played++
+    data.league.played++;
+    if(playerScore>rivalScore){data.league.won++;data.league.points+=3;}
+    else if(playerScore===rivalScore){data.league.draw++;data.league.points++;}
+    else{data.league.lost++;}
 
-if(ps>rs){
-data.league.won++
-data.league.points+=3
-}
-else if(ps==rs){
-data.league.draw++
-data.league.points++
-}
-else{
-data.league.lost++
-}
+    let matchCost=1000+Math.floor(Math.random()*4000);
+    let income=5000+Math.floor(Math.random()*5000);
+    // ספונסר
+    income+=income*data.sponsor/100;
 
-let income=5000+Math.random()*5000
-let cost=1000+Math.random()*3000
+    let bonusMsg="";
+    if(data.league.played%5===0){
+        let bonus=10000+Math.floor(Math.random()*15000);
+        data.budget+=bonus;
+        bonusMsg=`<p class="bonus">🎉 בונוס זכייה! $${bonus}</p>`;
+    }
 
-data.budget+=income-cost
+    data.budget+=Math.round(income-matchCost);
 
-let msg=`תוצאה ${ps}-${rs}`
+    document.getElementById("matchResult").innerHTML=`
+        <p>תוצאה: ${playerScore}-${rivalScore}</p>
+        <p>עלות: $${matchCost} | הכנסות: $${income.toFixed(0)} | תקציב: $${data.budget}</p>
+        ${bonusMsg}`;
 
-if(data.league.played%5==0){
+    if(data.league.played%10===0){
+        data.seasonsPlayed++;
+        data.seasonHistory.push({...data.league});
+        alert(`📅 עונה הסתיימה! סיימת ${data.seasonsPlayed} עונות`);
+        data.league={played:0,won:0,draw:0,lost:0,points:0};
+        data.sponsor=0; // ריסטר ספונסר לעונה הבאה
 
-let bonus=20000
+        if(data.seasonsPlayed%5===0){
+            data.championships++;
+            alert(`🏆 אליפות! מספר אליפויות: ${data.championships}`);
+        }
+    }
 
-data.budget+=bonus
-
-msg+=`<br>🎁 בונוס $${bonus}`
-
-}
-
-matchResult.innerHTML=msg
-
-if(data.league.played==10){
-
-data.seasons++
-
-data.league={played:0,won:0,draw:0,lost:0,points:0}
-
-if(data.seasons%5==0){
-data.championships++
-alert("🏆 אליפות!")
-}
-
-}
-
-localStorage.setItem("gogo",JSON.stringify(data))
-
-loadGame()
-
+    localStorage.setItem("miniFootball",JSON.stringify(data));
+    loadGame();
 }
 
-function updateTables(data){
-
-leagueTable.innerHTML=
-`ליגה<br>
-משחקים ${data.league.played} |
-ניצחונות ${data.league.won} |
-תיקו ${data.league.draw} |
-הפסדים ${data.league.lost} |
-נקודות ${data.league.points}`
-
-seasonTable.innerHTML=`עונות: ${data.seasons}`
-
-champTable.innerHTML=`אליפויות: ${data.championships}`
-
+function updateLeagueTable(league){
+    document.getElementById("leagueTable").innerHTML=`
+    משחקים: ${league.played} | ניצחונות: ${league.won} | תיקו: ${league.draw} | הפסדים: ${league.lost} | נקודות: ${league.points}`;
 }
 
-function generateMarket(){
-
-let marketPlayers=[]
-
-for(let i=0;i<3;i++){
-
-marketPlayers.push({
-attack:randomStat(),
-defense:randomStat(),
-fitness:randomStat()
-})
-
+function updateSeasonTable(data){
+    let html="היסטוריית עונות:<br>";
+    data.seasonHistory.forEach((s,i)=>{
+        html+=`עונה ${i+1}: ניצחונות ${s.won}, תיקו ${s.draw}, הפסדים ${s.lost}, נקודות ${s.points}<br>`;
+    });
+    document.getElementById("seasonTable").innerHTML=html;
 }
 
-localStorage.setItem("market",JSON.stringify(marketPlayers))
-
-drawMarket()
-
-}
-
-function drawMarket(){
-
-let data=JSON.parse(localStorage.getItem("gogo"))
-let marketPlayers=JSON.parse(localStorage.getItem("market"))
-
-market.innerHTML=""
-
-marketPlayers.forEach((p,i)=>{
-
-let price=playerValue(p)
-
-market.innerHTML+=`
-
-<div class="card">
-
-⚔ ${stars(p.attack)}
-
-<br>
-
-🛡 ${stars(p.defense)}
-
-<br>
-
-❤️ ${stars(p.fitness)}
-
-<br>
-
-$${price}
-
-<br>
-
-<button onclick="buyPlayer(${i})">קנה</button>
-
-</div>
-
-`
-
-})
-
-}
-
-function buyPlayer(i){
-
-let data=JSON.parse(localStorage.getItem("gogo"))
-let marketPlayers=JSON.parse(localStorage.getItem("market"))
-
-let p=marketPlayers[i]
-
-let price=playerValue(p)
-
-if(data.budget<price){
-alert("אין מספיק כסף")
-return
-}
-
-if(data.players.length>=18){
-alert("הסגל מלא")
-return
-}
-
-data.players.push(p)
-
-data.budget-=price
-
-marketPlayers.splice(i,1)
-
-localStorage.setItem("market",JSON.stringify(marketPlayers))
-localStorage.setItem("gogo",JSON.stringify(data))
-
-loadGame()
-drawMarket()
-
+function applySponsor(){
+    let data=JSON.parse(localStorage.getItem("miniFootball"));
+    if(!data) return;
+    if(data.sponsor>0){ alert("לא ניתן לשנות ספונסר עד סוף העונה"); return; }
+    let val=parseInt(document.getElementById("sponsorSelect").value);
+    if(val>0) data.sponsor=val;
+    localStorage.setItem("miniFootball",JSON.stringify(data));
+    loadGame();
 }
 
 function resetGame(){
-
-localStorage.clear()
-
-location.reload()
-
+    if(confirm("למחוק את כל המשחק ולהתחיל מחדש?")){
+        localStorage.removeItem("miniFootball");
+        document.getElementById("setup").style.display="block";
+        document.getElementById("game").style.display="none";
+        document.getElementById("teamName").value="";
+        document.getElementById("players").innerHTML="";
+        document.getElementById("leagueTable").innerHTML="";
+        document.getElementById("seasonTable").innerHTML="";
+        document.getElementById("championshipTable").innerHTML="";
+        document.getElementById("matchResult").innerHTML="";
+        document.getElementById("currentSponsor").innerText="";
+    }
 }
 
-loadGame()
-
-if(localStorage.getItem("market")==null){
-generateMarket()
-}
-
-drawMarket()
-
+loadGame();
 </script>
-
 </body>
 </html>
