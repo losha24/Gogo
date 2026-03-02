@@ -4,232 +4,240 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Go-Go</title>
+<link rel="icon" type="image/png" sizes="192x192" href="soccer_icon_192.png">
 <style>
-body { font-family: Arial; background:#0f172a; color:white; text-align:center; padding:20px; margin:0;}
-button { padding:8px 16px; margin:4px; border:none; border-radius:8px; cursor:pointer; font-weight:bold;}
-.primary{background:#22c55e;color:white;}
-.danger{background:#ef4444;color:white;}
-.train-btn{background:#3b82f6;color:white;}
-.train-row{display:flex;justify-content:center;flex-wrap:wrap;margin-bottom:10px;}
-.player{background:#1e293b;padding:6px;margin:4px auto;border-radius:6px;max-width:320px;font-size:13px;text-align:right;}
-.table{background:#1e293b;padding:10px;margin:8px auto;border-radius:8px;max-width:420px;text-align:right;}
-.green{color:#22c55e;}
-.red{color:#ef4444;}
-.bonus{color:#facc15;font-weight:bold;}
-.table th, .table td {padding:4px;}
+body { font-family: Arial, sans-serif; background: #0f172a; color: white; text-align: center; margin: 0; padding: 20px; }
+.logo { width:100px; margin-bottom:10px; }
+button { padding: 10px 20px; margin: 5px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+.primary { background: #22c55e; color: white; }
+.danger { background: #ef4444; color: white; }
+.train-btn { background: #3b82f6; color: white; display:flex; align-items:center; gap:5px; }
+.train-row { display:flex; justify-content:center; flex-wrap:wrap; margin-bottom:10px; }
+.player { background: #334155; margin: 3px auto; padding: 6px; border-radius: 6px; font-size: 13px; max-width:300px; word-wrap: break-word; }
+#budget { font-weight: bold; }
+.green { color: #22c55e; }
+.red { color: #ef4444; }
+.bonus { color: #facc15; font-weight:bold; font-size:16px; }
+.table { background:#1e293b; padding:10px; border-radius:8px; margin:10px auto; max-width:400px; text-align:right; }
+.table th, .table td { padding:4px 8px; text-align:center; border-bottom:1px solid #475569; }
+.table th { color:#38bdf8; }
 </style>
 </head>
 <body>
 
-<h2>⚽ Go-Go</h2>
+<img src="soccer_logo.png" alt="לוגו Go-Go" class="logo">
 
 <div id="setup">
-<input type="text" id="teamName" placeholder="שם קבוצה">
-<br>
-<button class="primary" onclick="createTeam()">צור קבוצה</button>
+    <input type="text" id="teamName" placeholder="הכנס שם קבוצה">
+    <br>
+    <button class="primary" onclick="createTeam()">צור קבוצה</button>
 </div>
 
 <div id="game" style="display:none;">
-<h3 id="teamTitle"></h3>
-<p>תקציב: $<span id="budget"></span></p>
+    <h2 id="teamTitle"></h2>
+    <p>תקציב: $<span id="budget"></span></p>
+    
+    <div id="players"></div>
 
-<div id="players"></div>
+    <h3>אימונים</h3>
+    <div class="train-row">
+        <button class="train-btn" onclick="train('attack')">⚔️ התקפה</button>
+        <button class="train-btn" onclick="train('defense')">🛡️ הגנה</button>
+        <button class="train-btn" onclick="train('fitness')">❤️ כושר</button>
+    </div>
 
-<h3>אימונים</h3>
-<div class="train-row">
-<button class="train-btn" onclick="train('attack')">⚔️ התקפה</button>
-<button class="train-btn" onclick="train('defense')">🛡️ הגנה</button>
-<button class="train-btn" onclick="train('fitness')">❤️ כושר</button>
-</div>
+    <button class="primary" onclick="playMatch()">⚽ משחק שבועי</button>
+    <div id="matchResult"></div>
 
-<br>
-<button class="primary" onclick="playMatch()">⚽ משחק שבועי</button>
-<div id="matchResult"></div>
+    <h3>טבלת ליגה</h3>
+    <div id="leagueTable" class="table"></div>
 
-<h3>טבלת ליגה</h3>
-<table class="table" id="leagueTable"></table>
+    <h3>טבלת עונות</h3>
+    <div id="seasonTable" class="table"></div>
 
-<h3>טבלת עונות</h3>
-<table class="table" id="seasonTable"></table>
+    <h3>אליפויות</h3>
+    <div id="championshipTable" class="table"></div>
 
-<h3>אליפויות</h3>
-<p id="championshipTable">0</p>
-
-<br>
-<button class="danger" onclick="resetGame()">איפוס משחק</button>
+    <br>
+    <button class="danger" onclick="resetGame()">איפוס משחק</button>
 </div>
 
 <script>
-function randomStat(){ return Math.floor(Math.random()*30)+1; }
-function randomTrain(){ return (Math.random()*2+0.5); }
+// פונקציות אקראיות
+function randomStat() { return Math.floor(Math.random()*30)+1; } 
+function randomTrain() { return (Math.random()*2.5+0.5).toFixed(1); } // שדרוג אימונים
 
-function stars(val){
-  let yellow=Math.floor(val/10);
-  let blue=Math.floor(yellow/5);
-  yellow=yellow%5;
-  return '🔷'.repeat(blue)+'⭐'.repeat(yellow);
+// כוכבים צבעוניים
+function starsColored(val){
+    let yellow = Math.floor(val/10); // כל 10 נקודות = ⭐ צהוב
+    let blue = Math.floor(yellow/5); // כל 5 כוכבים צהובים = 🔷 כחול
+    yellow = yellow % 5;
+    return '🔷'.repeat(blue)+'⭐'.repeat(yellow);
 }
 
-function createTeam(){
-  let name=document.getElementById("teamName").value;
-  if(!name) return alert("הכנס שם קבוצה");
+function createTeam() {
+    const name = document.getElementById("teamName").value;
+    if(!name) return alert("אנא הכנס שם קבוצה");
 
-  let players=[];
-  for(let i=1;i<=11;i++){
-    let attack=randomStat(),defense=randomStat(),fitness=randomStat();
-    let value=Math.round((attack+defense+fitness)*1000);
-    players.push({id:i,attack,defense,fitness,value});
-  }
+    let players=[];
+    for(let i=1;i<=11;i++){
+        let attack=randomStat(), defense=randomStat(), fitness=randomStat();
+        let value=Math.round((attack+defense+fitness)*1000);
+        players.push({id:i,attack,defense,fitness,value});
+    }
 
-  let data={
-    teamName:name,
-    budget:100000,
-    players:players,
-    league:{played:0,won:0,draw:0,lost:0,points:0},
-    seasons:0,
-    championships:0,
-    seasonHistory:[],
-    totalGames:0
-  };
+    const gameData={
+        teamName:name,
+        budget:100000,
+        players:players,
+        league:{played:0,won:0,draw:0,lost:0,points:0},
+        seasonsPlayed:0,
+        championships:0,
+        seasonHistory:[]
+    };
 
-  localStorage.setItem("goGoGame",JSON.stringify(data));
-  loadGame();
+    localStorage.setItem("miniFootball",JSON.stringify(gameData));
+    loadGame();
 }
 
 function loadGame(){
-  let data=JSON.parse(localStorage.getItem("goGoGame"));
-  if(!data) return;
+    const data=JSON.parse(localStorage.getItem("miniFootball"));
+    if(!data) return;
 
-  document.getElementById("setup").style.display="none";
-  document.getElementById("game").style.display="block";
+    document.getElementById("setup").style.display="none";
+    document.getElementById("game").style.display="block";
 
-  document.getElementById("teamTitle").innerText=data.teamName;
-  let budgetEl=document.getElementById("budget");
-  budgetEl.innerText=data.budget;
-  budgetEl.className=data.budget>=0?"green":"red";
+    let budgetSpan=document.getElementById("budget");
+    budgetSpan.innerText=data.budget;
+    budgetSpan.className=data.budget>=0?"green":"red";
 
-  let playersDiv=document.getElementById("players");
-  playersDiv.innerHTML="";
-  data.players.forEach(p=>{
-    playersDiv.innerHTML+=`
-    <div class="player">
-    שחקן ${p.id} | ⚔️ ${stars(p.attack)} | 🛡️ ${stars(p.defense)} | ❤️ ${stars(p.fitness)} | 💰 $${p.value}
-    </div>`;
-  });
+    document.getElementById("teamTitle").innerText=data.teamName;
 
-  updateLeague(data);
-  updateSeasons(data);
-  document.getElementById("championshipTable").innerText="אליפויות: "+data.championships;
+    const playersDiv=document.getElementById("players");
+    playersDiv.innerHTML="";
+    data.players.forEach(p=>{
+        playersDiv.innerHTML+=`
+        <div class="player">
+        שחקן ${p.id} | ⚔️ ${starsColored(p.attack)} | 🛡️ ${starsColored(p.defense)} | ❤️ ${starsColored(p.fitness)} | 💰 $${p.value}
+        </div>`;
+    });
+
+    updateLeagueTable(data.league);
+    updateSeasonTable(data);
+    document.getElementById("championshipTable").innerText=`אליפויות: ${data.championships}`;
 }
 
 function train(type){
-  let data=JSON.parse(localStorage.getItem("goGoGame"));
-  const cost=3000;
-  if(data.budget<cost) return alert("אין מספיק כסף");
+    let data=JSON.parse(localStorage.getItem("miniFootball"));
+    if(!data) return;
 
-  data.players.forEach(p=>{
-    let inc=randomTrain();
-    if(type==="attack") p.attack=Math.min(p.attack+inc,30);
-    if(type==="defense") p.defense=Math.min(p.defense+inc,30);
-    if(type==="fitness") p.fitness=Math.min(p.fitness+inc,30);
-    p.value=Math.round((p.attack+p.defense+p.fitness)*1000);
-  });
+    const TRAIN_COST = 3000; // עלות אימון גבוהה
+    if(data.budget<TRAIN_COST) return alert("אין מספיק כסף לאימון!");
 
-  data.budget-=cost;
-  localStorage.setItem("goGoGame",JSON.stringify(data));
-  loadGame();
+    data.players.forEach(p=>{
+        let inc=parseFloat(randomTrain());
+        if(type==="attack") p.attack=Math.min(p.attack+inc,30);
+        if(type==="defense") p.defense=Math.min(p.defense+inc,30);
+        if(type==="fitness") p.fitness=Math.min(p.fitness+inc,30);
+        p.value=Math.round((p.attack+p.defense+p.fitness)*1000);
+    });
+
+    data.budget-=TRAIN_COST;
+    localStorage.setItem("miniFootball",JSON.stringify(data));
+    loadGame();
 }
 
+// יריב עם קושי עולה
 function generateRival(week){
-  let factor=1+week*0.05;
-  let total=0;
-  for(let i=0;i<11;i++){
-    total+=randomStat()*factor;
-  }
-  return total;
+    let factor=1+week*0.05;
+    let players=[];
+    for(let i=1;i<=11;i++){
+        players.push({attack:Math.min(randomStat()*factor,30),defense:Math.min(randomStat()*factor,30),fitness:Math.min(randomStat()*factor,30)});
+    }
+    return players;
 }
 
 function playMatch(){
-  let data=JSON.parse(localStorage.getItem("goGoGame"));
+    let data=JSON.parse(localStorage.getItem("miniFootball"));
+    if(!data) return;
 
-  let playerTotal=0;
-  data.players.forEach(p=>{playerTotal+=p.attack+p.defense+p.fitness;});
-  let rivalTotal=generateRival(data.totalGames);
+    let rival=generateRival(data.league.played);
 
-  let playerScore=Math.floor(Math.random()*5*(playerTotal/1000));
-  let rivalScore=Math.floor(Math.random()*5*(rivalTotal/1000));
+    let playerPower={attack:0,defense:0,fitness:0};
+    let rivalPower={attack:0,defense:0,fitness:0};
 
-  data.league.played++;
-  data.totalGames++;
+    data.players.forEach(p=>{playerPower.attack+=p.attack;playerPower.defense+=p.defense;playerPower.fitness+=p.fitness;});
+    rival.forEach(p=>{rivalPower.attack+=p.attack;rivalPower.defense+=p.defense;rivalPower.fitness+=p.fitness;});
 
-  if(playerScore>rivalScore){data.league.won++;data.league.points+=3;}
-  else if(playerScore===rivalScore){data.league.draw++;data.league.points+=1;}
-  else{data.league.lost++;}
+    function calcScore(a,d,f){ let base=a*0.5+f*0.3-d*0.2; base=Math.max(base,0); return Math.min(Math.floor(Math.random()*6*(base/100)),5);}
+    let playerScore=calcScore(playerPower.attack,rivalPower.defense,playerPower.fitness);
+    let rivalScore=calcScore(rivalPower.attack,playerPower.defense,rivalPower.fitness);
 
-  // הכנסות והוצאות + ספונסרים
-  let cost=1000+Math.floor(Math.random()*4000);
-  let income=5000+Math.floor(Math.random()*5000);
+    data.league.played++;
+    if(playerScore>rivalScore){data.league.won++;data.league.points+=3;}
+    else if(playerScore===rivalScore){data.league.draw++;data.league.points++;}
+    else{data.league.lost++;}
 
-  // ספונסר אפשרי
-  let sponsorBonus=0;
-  if(Math.random()<0.3){ // 30% סיכוי לספונסר
-    sponsorBonus=Math.round(data.players.reduce((sum,p)=>sum+p.attack+p.defense+p.fitness,0)*500*0.5/100); // עד 50%
-    income+=sponsorBonus;
-  }
+    let matchCost=1000+Math.floor(Math.random()*4000);
+    let income=5000+Math.floor(Math.random()*5000);
+    data.budget+=Math.round(income-matchCost);
 
-  data.budget+=income-cost;
-
-  // בונוס כל 5 משחקים
-  let bonusText="";
-  if(data.totalGames%5===0){
-    let bonus=10000+Math.floor(Math.random()*15000);
-    data.budget+=bonus;
-    bonusText=`<p class="bonus">🎉 בונוס 5 משחקים: $${bonus}</p>`;
-  }
-
-  document.getElementById("matchResult").innerHTML=
-  `תוצאה: ${playerScore}-${rivalScore}<br>
-  הכנסות: $${income} | הוצאות: $${cost} | ספונסר: $${sponsorBonus}<br>
-  תקציב: $${data.budget}
-  ${bonusText}`;
-
-  // סיום ליגה כל 10 משחקים
-  if(data.league.played===10){
-    data.seasons++;
-    data.seasonHistory.push({...data.league});
-    alert("סיימת ליגה מספר "+data.seasons);
-
-    if(data.seasons%5===0){
-      data.championships++;
-      alert("🏆 זכית באליפות!");
+    let bonusMsg="";
+    if(data.league.played%5===0){
+        let bonus=10000+Math.floor(Math.random()*15000);
+        data.budget+=bonus;
+        bonusMsg=`<p class="bonus">🎉 בונוס זכייה! $${bonus}</p>`;
     }
 
-    data.league={played:0,won:0,draw:0,lost:0,points:0};
-  }
+    document.getElementById("matchResult").innerHTML=`
+        <p>תוצאה: ${playerScore}-${rivalScore}</p>
+        <p>עלות: $${matchCost} | הכנסות: $${income} | תקציב: $${data.budget}</p>
+        ${bonusMsg}`;
 
-  localStorage.setItem("goGoGame",JSON.stringify(data));
-  loadGame();
+    // מעבר עונה כל 10 משחקים
+    if(data.league.played%10===0){
+        data.seasonsPlayed++;
+        data.seasonHistory.push({...data.league});
+        alert(`📅 עונה הסתיימה! סיימת ${data.seasonsPlayed} עונות`);
+        data.league={played:0,won:0,draw:0,lost:0,points:0};
+
+        if(data.seasonsPlayed%5===0){
+            data.championships++;
+            alert(`🏆 אליפות! מספר אליפויות: ${data.championships}`);
+        }
+    }
+
+    localStorage.setItem("miniFootball",JSON.stringify(data));
+    loadGame();
 }
 
-function updateLeague(data){
-  let html=`<tr><th>משחקים</th><th>ניצחונות</th><th>תיקו</th><th>הפסדים</th><th>נקודות</th></tr>
-  <tr><td>${data.league.played}</td><td>${data.league.won}</td><td>${data.league.draw}</td><td>${data.league.lost}</td><td>${data.league.points}</td></tr>`;
-  document.getElementById("leagueTable").innerHTML=html;
+function updateLeagueTable(league){
+    let html='<table class="table"><tr><th>משחקים</th><th>נצחונות</th><th>תיקו</th><th>הפסדים</th><th>נקודות</th></tr>';
+    html+=`<tr><td>${league.played}</td><td>${league.won}</td><td>${league.draw}</td><td>${league.lost}</td><td>${league.points}</td></tr></table>`;
+    document.getElementById("leagueTable").innerHTML=html;
 }
 
-function updateSeasons(data){
-  let html=`<tr><th>ליגה</th><th>ניצחונות</th><th>תיקו</th><th>הפסדים</th><th>נקודות</th></tr>`;
-  data.seasonHistory.forEach((s,i)=>{
-    html+=`<tr><td>${i+1}</td><td>${s.won}</td><td>${s.draw}</td><td>${s.lost}</td><td>${s.points}</td></tr>`;
-  });
-  document.getElementById("seasonTable").innerHTML=html;
+function updateSeasonTable(data){
+    let html='<table class="table"><tr><th>עונה</th><th>נצחונות</th><th>תיקו</th><th>הפסדים</th><th>נקודות</th></tr>';
+    data.seasonHistory.forEach((s,i)=>{
+        html+=`<tr><td>${i+1}</td><td>${s.won}</td><td>${s.draw}</td><td>${s.lost}</td><td>${s.points}</td></tr>`;
+    });
+    html+='</table>';
+    document.getElementById("seasonTable").innerHTML=html;
 }
 
 function resetGame(){
-  if(confirm("למחוק הכל ולהתחיל מחדש?")){
-    localStorage.removeItem("goGoGame");
-    location.reload();
-  }
+    if(confirm("למחוק את כל המשחק ולהתחיל מחדש?")){
+        localStorage.removeItem("miniFootball");
+        document.getElementById("setup").style.display="block";
+        document.getElementById("game").style.display="none";
+        document.getElementById("teamName").value="";
+        document.getElementById("players").innerHTML="";
+        document.getElementById("leagueTable").innerHTML="";
+        document.getElementById("seasonTable").innerHTML="";
+        document.getElementById("championshipTable").innerHTML="";
+        document.getElementById("matchResult").innerHTML="";
+    }
 }
 
 loadGame();
