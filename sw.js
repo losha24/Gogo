@@ -1,33 +1,27 @@
-const CACHE_NAME = 'gogo-cache';
-const FILES_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/soccer_logo.png',
-  '/soccer_icon_192.png',
-  '/manifest.json',
-  '/game.js'
+const CACHE_NAME = "gogo-cache-v1.1";
+const urlsToCache = [
+  './index.html',
+  './manifest.json',
+  './soccer_icon_192.png',
+  './soccer_logo.png'
 ];
-
-const CURRENT_VERSION = '1.3';
 
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(FILES_TO_CACHE))
+    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
   );
-  self.skipWaiting();
+});
+
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    caches.match(event.request).then(response => response || fetch(event.request))
+  );
 });
 
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys => Promise.all(
-      keys.map(key => key !== CACHE_NAME ? caches.delete(key) : null)
+      keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
     ))
-  );
-  self.clients.claim();
-});
-
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request).then(res => res || fetch(event.request))
   );
 });
