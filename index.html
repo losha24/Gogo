@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Go-Go Football</title>
+<title>Go-Go Football Game</title>
 <link rel="icon" href="soccer-logo.png">
 <style>
 body {
@@ -77,6 +77,7 @@ button {
     margin: 10px auto;
     text-align: center;
 }
+.bonus { color: #facc15; font-weight:bold; }
 </style>
 </head>
 <body>
@@ -144,7 +145,7 @@ function createTeam(){
     let name=document.getElementById("teamName").value;
     if(!name) return alert("הכנס שם קבוצה");
     let players=[];
-    for(let i=1;i<=5;i++) players.push(createPlayer(i));
+    for(let i=1;i<=11;i++) players.push(createPlayer(i));
     let data={team:name,budget:100000,players,league:{played:0,won:0,draw:0,lost:0,points:0},trainCost:{attack:3000,defense:3000,speed:3000}};
     localStorage.setItem("gogoFootball",JSON.stringify(data));
     loadGame();
@@ -204,7 +205,7 @@ function playMatch(){
     let cost=2000+Math.random()*3000;
     data.budget+=income-cost;
     let bonus="";
-    if(data.league.played%5==0){ let b=10000; data.budget+=b; bonus="🎉 בונוס משחק חמישי: "+b; }
+    if(data.league.played%5==0){ let b=10000; data.budget+=b; bonus=`🎉 בונוס משחק חמישי: ${b}`; }
     matchResult.innerHTML=`תוצאה ${goals}-${rivalGoals} (${res})<br>הכנסות ${Math.round(income)} | עלות ${Math.round(cost)}<br>${bonus}`;
     localStorage.setItem("gogoFootball",JSON.stringify(data));
     loadGame();
@@ -222,7 +223,7 @@ function renderMarket(){
     marketPlayers.innerHTML="";
     for(let i=0;i<5;i++){
         let price=5000+Math.random()*20000;
-        marketPlayers.innerHTML+=`<div class="marketPlayer">שחקן 💰 ${Math.round(price)}<button class="primary" onclick="buyPlayer(${Math.round(price)})">קנה</button></div>`;
+        marketPlayers.innerHTML+=`<div class="marketPlayer">שחקן 💰 ${Math.round(price)} <button class="primary" onclick="buyPlayer(${Math.round(price)})">קנה</button></div>`;
     }
 }
 function toggleMarket(){ market.style.display=(market.style.display=="block")?"none":"block"; }
