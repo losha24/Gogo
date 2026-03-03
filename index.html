@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Football Manager</title>
+<title>Soccer Manager</title>
 
 <style>
 
@@ -14,108 +14,109 @@ body{
 font-family:Arial;
 background:#0f172a;
 color:white;
-text-align:center;
 margin:0;
+text-align:center;
+display:flex;
+justify-content:center;
+}
+
+.wrapper{
+max-width:1100px;
+width:100%;
 }
 
 header{
-font-size:28px;
-font-weight:bold;
 margin-top:10px;
 }
 
 .logo{
-width:80px;
+width:90px;
 display:block;
 margin:auto;
-margin-top:5px;
 }
 
-.container{
-max-width:900px;
-margin:auto;
+h1{
+margin:5px;
 }
 
 .players{
 display:grid;
-grid-template-columns:repeat(5,1fr);
-gap:10px;
+grid-template-columns:repeat(4,1fr);
+gap:12px;
 margin-top:20px;
+justify-items:center;
 }
 
 .player{
 background:#1e293b;
-padding:10px;
 border-radius:10px;
+padding:10px;
+width:180px;
+box-shadow:0 0 10px rgba(0,0,0,0.4);
 }
 
-.stars{
+.player h3{
+margin:5px;
+}
+
+.stat{
+font-size:14px;
+margin:3px;
+}
+
+.star{
 color:gold;
-font-size:18px;
 }
 
 .blue{
 color:#38bdf8;
 }
 
+.controls{
+margin-top:20px;
+}
+
 button{
-padding:8px 12px;
+background:#2563eb;
 border:none;
-border-radius:8px;
+padding:8px 12px;
+border-radius:6px;
+color:white;
 margin:4px;
 cursor:pointer;
-background:#2563eb;
-color:white;
 }
 
 button:hover{
 background:#1d4ed8;
 }
 
+.budget{
+background:#111827;
+padding:10px;
+border-radius:10px;
+font-size:22px;
+margin-top:20px;
+display:inline-block;
+}
+
+.result{
+margin-top:20px;
+background:#111827;
+padding:10px;
+border-radius:10px;
+}
+
 .market{
 display:none;
+margin-top:20px;
 background:#111827;
 padding:15px;
-margin-top:20px;
-border-radius:10px;
-}
-
-.tableBox{
-display:none;
-background:#111827;
-padding:15px;
-margin-top:20px;
-border-radius:10px;
-}
-
-table{
-width:100%;
-border-collapse:collapse;
-}
-
-td,th{
-border:1px solid #334155;
-padding:6px;
-}
-
-.budget{
-margin-top:20px;
-font-size:22px;
-background:#111827;
-padding:10px;
-border-radius:10px;
-}
-
-.resultBox{
-margin-top:20px;
-background:#111827;
-padding:10px;
 border-radius:10px;
 }
 
 footer{
 margin-top:30px;
-opacity:0.7;
+opacity:0.6;
 }
 
 </style>
@@ -124,23 +125,23 @@ opacity:0.7;
 
 <body>
 
-<header>
+<div class="wrapper">
 
-Football Manager
+<header>
 
 <img src="soccer-logo.png" class="logo">
 
-</header>
+<h1>Football Manager</h1>
 
-<div class="container">
+</header>
 
 <div class="players" id="players"></div>
 
 <div class="budget">
-תקציב: ₪ <span id="money">0</span>
+תקציב: ₪ <span id="money"></span>
 </div>
 
-<div>
+<div class="controls">
 
 <button onclick="train('attack')">אימון התקפה</button>
 <button onclick="train('defense')">אימון הגנה</button>
@@ -150,64 +151,39 @@ Football Manager
 
 <button onclick="toggleMarket()">שוק שחקנים</button>
 
-<button onclick="toggleTables()">טבלת משחקים</button>
-
 <button onclick="resetGame()">איפוס</button>
 
 </div>
 
-<div class="resultBox" id="result"></div>
+<div class="result" id="result"></div>
 
 <div class="market" id="market"></div>
-
-<div class="tableBox" id="tables">
-
-<h3>טבלת ליגה</h3>
-
-<table>
-
-<tr>
-<th>משחקים</th>
-<th>נצחונות</th>
-<th>תיקו</th>
-<th>הפסדים</th>
-<th>נקודות</th>
-</tr>
-
-<tr>
-<td id="g"></td>
-<td id="w"></td>
-<td id="d"></td>
-<td id="l"></td>
-<td id="p"></td>
-</tr>
-
-</table>
-
-<h3>עונות</h3>
-<div id="seasons"></div>
-
-<h3>אליפויות</h3>
-<div id="titles"></div>
-
-</div>
-
-</div>
 
 <footer>
 © אלכסיי זבודיסקר
 </footer>
 
+</div>
+
 <script>
 
 let game
 
-function starDisplay(points){
+function starSystem(points){
 
 let yellow=Math.floor(points/10)
+
 let blue=Math.floor(yellow/10)
 
-return "⭐".repeat(yellow-blue*10)+" <span class='blue'>🔵"+blue+"</span>"
+yellow=yellow%10
+
+let stars=""
+
+for(let i=0;i<yellow;i++) stars+="⭐"
+
+if(blue>0) stars+=" <span class='blue'>🔵"+blue+"</span>"
+
+return stars
 
 }
 
@@ -225,11 +201,11 @@ fitness:10+Math.floor(Math.random()*30)
 
 function init(){
 
-let saved=localStorage.getItem("footballGame")
+let save=localStorage.getItem("soccerGame")
 
-if(saved){
+if(save){
 
-game=JSON.parse(saved)
+game=JSON.parse(save)
 
 }else{
 
@@ -241,12 +217,14 @@ wins:0,
 draws:0,
 losses:0,
 points:0,
-season:1,
-titles:0,
 trainCost:1000
 }
 
-for(let i=0;i<11;i++) game.players.push(randomPlayer())
+for(let i=0;i<11;i++){
+
+game.players.push(randomPlayer())
+
+}
 
 }
 
@@ -256,19 +234,13 @@ render()
 
 function save(){
 
-localStorage.setItem("footballGame",JSON.stringify(game))
+localStorage.setItem("soccerGame",JSON.stringify(game))
 
 }
 
 function render(){
 
 document.getElementById("money").innerText=game.money
-
-document.getElementById("g").innerText=game.games
-document.getElementById("w").innerText=game.wins
-document.getElementById("d").innerText=game.draws
-document.getElementById("l").innerText=game.losses
-document.getElementById("p").innerText=game.points
 
 let html=""
 
@@ -278,13 +250,13 @@ html+=`
 
 <div class="player">
 
-שחקן ${i+1}
+<h3>שחקן ${i+1}</h3>
 
-<div>התקפה ${starDisplay(p.attack)}</div>
-<div>הגנה ${starDisplay(p.defense)}</div>
-<div>כושר ${starDisplay(p.fitness)}</div>
+<div class="stat">⚔ התקפה ${starSystem(p.attack)}</div>
+<div class="stat">🛡 הגנה ${starSystem(p.defense)}</div>
+<div class="stat">⚡ כושר ${starSystem(p.fitness)}</div>
 
-<button onclick="sellPlayer(${i})">מכירה</button>
+<button onclick="sell(${i})">מכירה</button>
 
 </div>
 
@@ -318,45 +290,49 @@ render()
 
 function playMatch(){
 
-let power=0
+let team=0
 
 game.players.forEach(p=>{
 
-power+=p.attack+p.defense+p.fitness
+team+=p.attack+p.defense+p.fitness
 
 })
 
 let enemy=300+Math.random()*200
 
-let goals=Math.floor(power/100+Math.random()*3)
-let enemyGoals=Math.floor(enemy/100+Math.random()*3)
+let goals=Math.floor(team/120+Math.random()*3)
 
-let income=5000+Math.random()*3000
+let enemyGoals=Math.floor(enemy/120+Math.random()*3)
+
+let income=4000+Math.random()*3000
 
 game.money+=income
 
-let text=""
+let result=""
 
 if(goals>enemyGoals){
 
+result="ניצחון"
+
 game.wins++
 game.points+=3
-text="ניצחון"
 
 }
 
 else if(goals==enemyGoals){
 
+result="תיקו"
+
 game.draws++
-game.points+=1
-text="תיקו"
+game.points++
 
 }
 
 else{
 
+result="הפסד"
+
 game.losses++
-text="הפסד"
 
 }
 
@@ -371,8 +347,8 @@ game.money+=10000
 document.getElementById("result").innerHTML=
 
 `
-תוצאה: ${goals} - ${enemyGoals}<br>
-${text}<br>
+תוצאה ${goals} - ${enemyGoals}<br>
+${result}<br>
 הכנסה ₪${income}
 `
 
@@ -397,7 +373,7 @@ for(let i=0;i<5;i++){
 
 let p=randomPlayer()
 
-let price=(p.attack+p.defense+p.fitness)*100
+let value=(p.attack+p.defense+p.fitness)*120
 
 html+=`
 
@@ -405,9 +381,9 @@ html+=`
 
 התקפה ${p.attack} הגנה ${p.defense} כושר ${p.fitness}
 
-<button onclick='buy(${JSON.stringify(p)},${price})'>
+<button onclick='buy(${JSON.stringify(p)},${value})'>
 
-קנה ₪${price}
+קנה ₪${value}
 
 </button>
 
@@ -435,11 +411,11 @@ render()
 
 }
 
-function sellPlayer(i){
+function sell(i){
 
 let p=game.players[i]
 
-let price=(p.attack+p.defense+p.fitness)*50
+let price=(p.attack+p.defense+p.fitness)*80
 
 game.money+=price
 
@@ -449,17 +425,9 @@ render()
 
 }
 
-function toggleTables(){
-
-let t=document.getElementById("tables")
-
-t.style.display=t.style.display=="block"?"none":"block"
-
-}
-
 function resetGame(){
 
-localStorage.removeItem("footballGame")
+localStorage.removeItem("soccerGame")
 
 location.reload()
 
@@ -470,4 +438,5 @@ init()
 </script>
 
 </body>
+
 </html>
