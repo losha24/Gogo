@@ -15,7 +15,7 @@ button { padding: 8px 16px; margin: 5px; border: none; border-radius: 6px; curso
 .train-row { display:flex; justify-content:center; flex-wrap:wrap; margin-bottom:10px; gap:5px; }
 .player, .market-player { background: #334155; margin: 5px auto; padding: 8px; border-radius: 6px; font-size: 14px; max-width: 340px; display:flex; justify-content:space-between; align-items:center; }
 .player-stats { text-align:right; flex:1; }
-#budget { font-weight: bold; margin-bottom:10px; display:block; }
+#budget { font-weight: bold; margin:10px auto; padding:5px; border-radius:6px; max-width:340px; display:block; border:2px solid #334155; font-size:16px; }
 .green { color: #22c55e; }
 .red { color: #ef4444; }
 .bonus { color: #facc15; font-weight:bold; font-size:16px; }
@@ -36,9 +36,9 @@ button { padding: 8px 16px; margin: 5px; border: none; border-radius: 6px; curso
 
 <div id="game" style="display:none;">
     <h2 id="teamTitle"></h2>
-    <span id="budget"></span>
 
     <div id="players"></div>
+    <span id="budget"></span>
 
     <h3>אימונים ומשחקים</h3>
     <div class="train-row">
@@ -58,13 +58,8 @@ button { padding: 8px 16px; margin: 5px; border: none; border-radius: 6px; curso
     <div id="matchResult" class="match-box"></div>
 
     <div id="tablesContainer">
-        <h3>טבלת ליגה</h3>
         <div id="leagueTable" class="table"></div>
-
-        <h3>טבלת עונות</h3>
         <div id="seasonTable" class="table"></div>
-
-        <h3>אליפויות</h3>
         <div id="championshipTable" class="table"></div>
     </div>
 
@@ -113,9 +108,6 @@ function loadGame(){
     if(!data) return;
     document.getElementById("setup").style.display="none";
     document.getElementById("game").style.display="block";
-    document.getElementById("budget").innerText="תקציב: $"+data.budget;
-    document.getElementById("budget").className=data.budget>=0?"green":"red";
-    document.getElementById("teamTitle").innerText=data.teamName;
 
     // שחקנים
     const playersDiv=document.getElementById("players");
@@ -127,6 +119,13 @@ function loadGame(){
             <button class="danger" onclick="sellPlayer(${p.id})">מכור</button>
         </div>`;
     });
+
+    // תקציב
+    const budgetSpan=document.getElementById("budget");
+    budgetSpan.innerText="תקציב: $"+data.budget;
+    budgetSpan.className=data.budget>=0?"green":"red";
+
+    document.getElementById("teamTitle").innerText=data.teamName;
 
     updateLeagueTable(data.league);
     updateSeasonTable(data);
