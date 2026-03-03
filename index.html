@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Soccer Manager</title>
+<title>Football Manager</title>
 
 <style>
 
@@ -23,53 +23,33 @@ justify-content:center;
 .wrapper{
 max-width:1100px;
 width:100%;
-}
-
-header{
-margin-top:10px;
+padding:20px;
 }
 
 .logo{
-width:90px;
+width:100px;
 display:block;
 margin:auto;
-}
-
-h1{
-margin:5px;
+margin-bottom:20px;
 }
 
 .players{
 display:grid;
-grid-template-columns:repeat(4,1fr);
+grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
 gap:12px;
 margin-top:20px;
-justify-items:center;
 }
 
 .player{
 background:#1e293b;
 border-radius:10px;
 padding:10px;
-width:180px;
 box-shadow:0 0 10px rgba(0,0,0,0.4);
-}
-
-.player h3{
-margin:5px;
 }
 
 .stat{
 font-size:14px;
 margin:3px;
-}
-
-.star{
-color:gold;
-}
-
-.blue{
-color:#38bdf8;
 }
 
 .controls{
@@ -94,7 +74,7 @@ background:#1d4ed8;
 background:#111827;
 padding:10px;
 border-radius:10px;
-font-size:22px;
+font-size:20px;
 margin-top:20px;
 display:inline-block;
 }
@@ -114,6 +94,13 @@ padding:15px;
 border-radius:10px;
 }
 
+input{
+padding:8px;
+border-radius:6px;
+border:none;
+margin:10px;
+}
+
 footer{
 margin-top:30px;
 opacity:0.6;
@@ -127,41 +114,49 @@ opacity:0.6;
 
 <div class="wrapper">
 
-<header>
+<img src="soccer_logo.png" class="logo">
 
-<img src="soccer-logo.png" class="logo">
+<div id="setup">
 
-<h1>Football Manager</h1>
+<input id="teamName" placeholder="שם קבוצה">
 
-</header>
+<br>
+
+<button onclick="createTeam()">צור קבוצה</button>
+
+</div>
+
+<div id="game" style="display:none">
 
 <div class="players" id="players"></div>
 
 <div class="budget">
-תקציב: ₪ <span id="money"></span>
+תקציב ₪ <span id="money"></span>
 </div>
 
 <div class="controls">
 
-<button onclick="train('attack')">אימון התקפה</button>
-<button onclick="train('defense')">אימון הגנה</button>
-<button onclick="train('fitness')">אימון כושר</button>
+<button onclick="train('attack')">⚔ התקפה</button>
+<button onclick="train('defense')">🛡 הגנה</button>
+<button onclick="train('fitness')">⚡ מהירות</button>
 
-<button onclick="playMatch()">משחק שבועי</button>
+<button onclick="playMatch()">⚽ משחק שבועי</button>
 
-<button onclick="toggleMarket()">שוק שחקנים</button>
+<button onclick="toggleMarket()">🛒 שוק שחקנים</button>
 
-<button onclick="resetGame()">איפוס</button>
+<button onclick="resetGame()">איפוס משחק</button>
 
 </div>
 
-<div class="result" id="result"></div>
+<div id="result" class="result"></div>
 
-<div class="market" id="market"></div>
+<div id="market" class="market"></div>
 
 <footer>
 © אלכסיי זבודיסקר
 </footer>
+
+</div>
 
 </div>
 
@@ -172,7 +167,6 @@ let game
 function starSystem(points){
 
 let yellow=Math.floor(points/10)
-
 let blue=Math.floor(yellow/10)
 
 yellow=yellow%10
@@ -181,7 +175,7 @@ let stars=""
 
 for(let i=0;i<yellow;i++) stars+="⭐"
 
-if(blue>0) stars+=" <span class='blue'>🔵"+blue+"</span>"
+if(blue>0) stars+=" 🔵"+blue
 
 return stars
 
@@ -190,26 +184,21 @@ return stars
 function randomPlayer(){
 
 return{
-
-attack:10+Math.floor(Math.random()*30),
-defense:10+Math.floor(Math.random()*30),
-fitness:10+Math.floor(Math.random()*30)
-
+attack:10+Math.floor(Math.random()*20),
+defense:10+Math.floor(Math.random()*20),
+fitness:10+Math.floor(Math.random()*20)
 }
 
 }
 
-function init(){
+function createTeam(){
 
-let save=localStorage.getItem("soccerGame")
+let name=document.getElementById("teamName").value
 
-if(save){
-
-game=JSON.parse(save)
-
-}else{
+if(!name)return alert("הכנס שם קבוצה")
 
 game={
+name:name,
 money:100000,
 players:[],
 games:0,
@@ -221,20 +210,30 @@ trainCost:1000
 }
 
 for(let i=0;i<11;i++){
-
 game.players.push(randomPlayer())
-
 }
 
-}
-
-render()
+save()
+load()
 
 }
 
 function save(){
-
 localStorage.setItem("soccerGame",JSON.stringify(game))
+}
+
+function load(){
+
+let saveData=localStorage.getItem("soccerGame")
+
+if(!saveData)return
+
+game=JSON.parse(saveData)
+
+document.getElementById("setup").style.display="none"
+document.getElementById("game").style.display="block"
+
+render()
 
 }
 
@@ -250,13 +249,13 @@ html+=`
 
 <div class="player">
 
-<h3>שחקן ${i+1}</h3>
+<div class="stat">שחקן ${i+1}</div>
 
-<div class="stat">⚔ התקפה ${starSystem(p.attack)}</div>
-<div class="stat">🛡 הגנה ${starSystem(p.defense)}</div>
-<div class="stat">⚡ כושר ${starSystem(p.fitness)}</div>
+<div class="stat">⚔ ${starSystem(p.attack)}</div>
+<div class="stat">🛡 ${starSystem(p.defense)}</div>
+<div class="stat">⚡ ${starSystem(p.fitness)}</div>
 
-<button onclick="sell(${i})">מכירה</button>
+<button onclick="sell(${i})">מכור</button>
 
 </div>
 
@@ -272,16 +271,13 @@ save()
 
 function train(type){
 
-if(game.money<game.trainCost) return
+if(game.money<game.trainCost)return
 
 game.money-=game.trainCost
-
 game.trainCost+=500
 
 game.players.forEach(p=>{
-
 p[type]+=2
-
 })
 
 render()
@@ -290,58 +286,42 @@ render()
 
 function playMatch(){
 
-let team=0
+let power=0
 
 game.players.forEach(p=>{
-
-team+=p.attack+p.defense+p.fitness
-
+power+=p.attack+p.defense+p.fitness
 })
 
 let enemy=300+Math.random()*200
 
-let goals=Math.floor(team/120+Math.random()*3)
-
+let goals=Math.floor(power/120+Math.random()*3)
 let enemyGoals=Math.floor(enemy/120+Math.random()*3)
 
-let income=4000+Math.random()*3000
+let income=4000+Math.floor(Math.random()*4000)
 
 game.money+=income
 
 let result=""
 
 if(goals>enemyGoals){
-
 result="ניצחון"
-
 game.wins++
 game.points+=3
-
 }
-
 else if(goals==enemyGoals){
-
 result="תיקו"
-
 game.draws++
 game.points++
-
 }
-
 else{
-
 result="הפסד"
-
 game.losses++
-
 }
 
 game.games++
 
 if(game.games%5==0){
-
 game.money+=10000
-
 }
 
 document.getElementById("result").innerHTML=
@@ -361,10 +341,8 @@ function toggleMarket(){
 let m=document.getElementById("market")
 
 if(m.style.display=="block"){
-
 m.style.display="none"
 return
-
 }
 
 let html="<h3>שוק שחקנים</h3>"
@@ -379,12 +357,10 @@ html+=`
 
 <div>
 
-התקפה ${p.attack} הגנה ${p.defense} כושר ${p.fitness}
+⚔ ${p.attack} 🛡 ${p.defense} ⚡ ${p.fitness}
 
 <button onclick='buy(${JSON.stringify(p)},${value})'>
-
 קנה ₪${value}
-
 </button>
 
 </div>
@@ -394,14 +370,13 @@ html+=`
 }
 
 m.innerHTML=html
-
 m.style.display="block"
 
 }
 
 function buy(p,price){
 
-if(game.money<price) return
+if(game.money<price)return
 
 game.money-=price
 
@@ -427,13 +402,15 @@ render()
 
 function resetGame(){
 
+if(!confirm("לאפס משחק?"))return
+
 localStorage.removeItem("soccerGame")
 
 location.reload()
 
 }
 
-init()
+load()
 
 </script>
 
