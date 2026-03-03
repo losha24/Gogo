@@ -6,39 +6,14 @@
 <title>Go-Go Football Game</title>
 <link rel="icon" type="image/png" sizes="192x192" href="soccer_icon_192.png">
 <style>
-body {
-    font-family: Arial, sans-serif;
-    background: #0f172a;
-    color: white;
-    text-align: center;
-    margin: 0;
-    padding: 20px;
-}
+body { font-family: Arial, sans-serif; background: #0f172a; color: white; text-align: center; margin: 0; padding: 20px; }
 .logo { width:100px; margin: 10px auto; display:block; }
-
-button {
-    padding: 8px 16px;
-    margin: 5px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: bold;
-}
+button { padding: 8px 16px; margin: 5px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
 .primary { background: #22c55e; color: white; }
 .danger { background: #ef4444; color: white; }
 .train-btn { background: #3b82f6; color: white; display:flex; align-items:center; gap:5px; margin:5px; }
-.train-row { display:flex; justify-content:center; flex-wrap:wrap; margin-bottom:10px; }
-.player, .market-player { 
-    background: #334155; 
-    margin: 5px auto; 
-    padding: 8px; 
-    border-radius: 6px; 
-    font-size: 14px; 
-    max-width: 320px; 
-    display:flex; 
-    justify-content:space-between; 
-    align-items:center;
-}
+.train-row { display:flex; justify-content:center; flex-wrap:wrap; margin-bottom:10px; gap:5px; }
+.player, .market-player { background: #334155; margin: 5px auto; padding: 8px; border-radius: 6px; font-size: 14px; max-width: 340px; display:flex; justify-content:space-between; align-items:center; }
 .player-stats { text-align:right; flex:1; }
 #budget { font-weight: bold; margin-bottom:10px; display:block; }
 .green { color: #22c55e; }
@@ -65,11 +40,12 @@ button {
 
     <div id="players"></div>
 
-    <h3>אימונים</h3>
+    <h3>אימונים ומשחקים</h3>
     <div class="train-row">
         <button class="train-btn" onclick="train('attack')">⚔️ התקפה</button>
         <button class="train-btn" onclick="train('defense')">🛡️ הגנה</button>
         <button class="train-btn" onclick="train('fitness')">❤️ כושר</button>
+        <button class="primary" onclick="toggleTables()">📊 טבלת משחקים</button>
     </div>
 
     <button class="primary" onclick="toggleMarket()">🛒 שוק שחקנים</button>
@@ -81,7 +57,6 @@ button {
     <button class="primary" onclick="playMatch()">⚽ משחק שבועי</button>
     <div id="matchResult" class="match-box"></div>
 
-    <button class="primary" onclick="toggleTables()">📊 טבלת משחקים</button>
     <div id="tablesContainer">
         <h3>טבלת ליגה</h3>
         <div id="leagueTable" class="table"></div>
@@ -100,10 +75,9 @@ button {
 </div>
 
 <script>
+// --- פונקציות בסיס ---
 function randomStat(){ return Math.floor(Math.random()*30)+1; }
 function starsColored(val){ let yellow=Math.floor(val/10); let blue=Math.floor(yellow/5); yellow=yellow%5; return '🔷'.repeat(blue)+'⭐'.repeat(yellow); }
-
-let trainMultiplier={attack:1, defense:1, fitness:1};
 
 function createTeam(){
     const name=document.getElementById("teamName").value;
@@ -143,6 +117,7 @@ function loadGame(){
     document.getElementById("budget").className=data.budget>=0?"green":"red";
     document.getElementById("teamTitle").innerText=data.teamName;
 
+    // שחקנים
     const playersDiv=document.getElementById("players");
     playersDiv.innerHTML="";
     data.players.forEach(p=>{
@@ -159,10 +134,10 @@ function loadGame(){
     renderMarket();
 }
 
+// --- אימונים ---
 function train(type){
     let data=JSON.parse(localStorage.getItem("miniFootball"));
     if(!data) return;
-
     let baseCost=3000*Math.ceil(data.trainMultiplier[type]);
     if(data.budget<baseCost) return alert("אין מספיק כסף לאימון!");
     data.players.forEach(p=>{
@@ -171,11 +146,12 @@ function train(type){
         p.value=Math.round((p.attack+p.defense+p.fitness)*1000);
     });
     data.budget-=baseCost;
-    data.trainMultiplier[type]+=0.2; // תייקור כל לחיצה
+    data.trainMultiplier[type]+=0.2;
     localStorage.setItem("miniFootball",JSON.stringify(data));
     loadGame();
 }
 
+// --- יריב ---
 function generateRival(week){
     let factor=1+week*0.05;
     let players=[];
@@ -185,17 +161,15 @@ function generateRival(week){
     return players;
 }
 
+// --- משחק ---
 function playMatch(){
     let data=JSON.parse(localStorage.getItem("miniFootball"));
     if(!data) return;
-
     let rival=generateRival(data.league.played);
     let playerPower={attack:0,defense:0,fitness:0};
     let rivalPower={attack:0,defense:0,fitness:0};
-
     data.players.forEach(p=>{playerPower.attack+=p.attack;playerPower.defense+=p.defense;playerPower.fitness+=p.fitness;});
     rival.forEach(p=>{rivalPower.attack+=p.attack;rivalPower.defense+=p.defense;rivalPower.fitness+=p.fitness;});
-
     function calcScore(a,d,f){ let base=a*0.5+f*0.3-d*0.2; base=Math.max(base,0); return Math.min(Math.floor(Math.random()*6*(base/100)),5);}
     let playerScore=calcScore(playerPower.attack,rivalPower.defense,playerPower.fitness);
     let rivalScore=calcScore(rivalPower.attack,playerPower.defense,rivalPower.fitness);
@@ -228,7 +202,7 @@ function playMatch(){
         data.seasonHistory.push({...data.league});
         alert(`📅 עונה הסתיימה! סה"כ עונות: ${data.seasonsPlayed}`);
         data.league={played:0,won:0,draw:0,lost:0,points:0};
-        data.trainMultiplier={attack:1,defense:1,fitness:1}; // איפוס תייקור אימונים
+        data.trainMultiplier={attack:1,defense:1,fitness:1};
         if(data.seasonsPlayed%5===0){
             data.championships++;
             alert(`🏆 אליפות! מספר אליפויות: ${data.championships}`);
@@ -241,43 +215,16 @@ function playMatch(){
 // --- טבלאות ---
 function updateLeagueTable(league){ document.getElementById("leagueTable").innerText=`משחקים: ${league.played} | ניצחונות: ${league.won} | תיקו: ${league.draw} | הפסדים: ${league.lost} | נקודות ${league.points}`;}
 function updateSeasonTable(data){ let html="היסטוריית עונות:<br>"; data.seasonHistory.forEach((s,i)=>{ html+=`עונה ${i+1}: ניצחונות ${s.won}, תיקו ${s.draw}, הפסדים ${s.lost}, נקודות ${s.points}<br>`; }); document.getElementById("seasonTable").innerHTML=html;}
-
-// --- שוק שחקנים ---
-function toggleMarket(){ const market=document.getElementById("market"); market.style.display=(market.style.display==="none"||market.style.display==="")?"block":"none"; }
-function resetMarket(){ let data=JSON.parse(localStorage.getItem("miniFootball")); data.budget=Math.round(data.budget*0.99); localStorage.setItem("miniFootball",JSON.stringify(data)); loadGame(); }
-function renderMarket(){
-    const marketPlayers=document.getElementById("marketPlayers");
-    marketPlayers.innerHTML="";
-    for(let i=1;i<=5;i++){
-        let val=Math.floor(Math.random()*30000+5000);
-        marketPlayers.innerHTML+=`
-        <div class="market-player">
-            שחקן ${i} | 💰 ${val}
-            <button class="primary" onclick="buyPlayer(${val})">קנה</button>
-        </div>`;
-    }
-}
-function buyPlayer(value){
-    let data=JSON.parse(localStorage.getItem("miniFootball"));
-    if(data.budget<value) return alert("אין מספיק כסף לקנייה!");
-    let id=data.players.length+1;
-    let attack=10*(Math.floor(Math.random()*3)+1);
-    let defense=10*(Math.floor(Math.random()*3)+1);
-    let fitness=10*(Math.floor(Math.random()*3)+1);
-    let player={id,attack,defense,fitness,value};
-    data.players.push(player);
-    data.budget-=value;
-    localStorage.setItem("miniFootball",JSON.stringify(data));
-    loadGame();
-}
-
-// --- מכירה ---
-function sellPlayer(id){ let data=JSON.parse(localStorage.getItem("miniFootball")); let index=data.players.findIndex(p=>p.id===id); if(index===-1)return; let player=data.players[index]; let sellValue=Math.round(player.value*0.5); data.budget+=sellValue; data.players.splice(index,1); localStorage.setItem("miniFootball",JSON.stringify(data)); loadGame(); }
-
-// --- טבלאות ---
 function toggleTables(){ const tables=document.querySelectorAll("#tablesContainer .table"); tables.forEach(t=>t.style.display=(t.style.display==="none"||t.style.display==="")?"block":"none"); }
 
-// --- איפוס ---
+// --- שוק ---
+function toggleMarket(){ const market=document.getElementById("market"); market.style.display=(market.style.display==="none"||market.style.display==="")?"block":"none"; }
+function resetMarket(){ let data=JSON.parse(localStorage.getItem("miniFootball")); data.budget=Math.round(data.budget*0.99); localStorage.setItem("miniFootball",JSON.stringify(data)); loadGame(); }
+function renderMarket(){ const marketPlayers=document.getElementById("marketPlayers"); marketPlayers.innerHTML=""; for(let i=1;i<=5;i++){ let val=Math.floor(Math.random()*30000+5000); marketPlayers.innerHTML+=`<div class="market-player">שחקן ${i} | 💰 ${val} <button class="primary" onclick="buyPlayer(${val})">קנה</button></div>`; } }
+function buyPlayer(value){ let data=JSON.parse(localStorage.getItem("miniFootball")); if(data.budget<value) return alert("אין מספיק כסף לקנייה!"); let id=data.players.length+1; let attack=10*(Math.floor(Math.random()*3)+1); let defense=10*(Math.floor(Math.random()*3)+1); let fitness=10*(Math.floor(Math.random()*3)+1); let player={id,attack,defense,fitness,value}; data.players.push(player); data.budget-=value; localStorage.setItem("miniFootball",JSON.stringify(data)); loadGame(); }
+function sellPlayer(id){ let data=JSON.parse(localStorage.getItem("miniFootball")); let index=data.players.findIndex(p=>p.id===id); if(index===-1)return; let player=data.players[index]; let sellValue=Math.round(player.value*0.5); data.budget+=sellValue; data.players.splice(index,1); localStorage.setItem("miniFootball",JSON.stringify(data)); loadGame(); }
+
+// --- איפוס משחק ---
 function resetGame(){ if(confirm("למחוק את כל המשחק ולהתחיל מחדש?")){ localStorage.removeItem("miniFootball"); document.getElementById("setup").style.display="block"; document.getElementById("game").style.display="none"; document.getElementById("teamName").value=""; document.getElementById("players").innerHTML=""; document.getElementById("leagueTable").innerHTML=""; document.getElementById("seasonTable").innerHTML=""; document.getElementById("championshipTable").innerHTML=""; document.getElementById("matchResult").innerHTML=""; document.getElementById("market").style.display="none"; } }
 
 loadGame();
