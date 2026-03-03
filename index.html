@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
+
 <head>
 
 <meta charset="UTF-8">
@@ -24,7 +25,7 @@ margin-bottom:20px;
 }
 
 .controls{
-margin-bottom:20px;
+margin-bottom:15px;
 }
 
 button{
@@ -36,7 +37,6 @@ margin:4px;
 border-radius:8px;
 color:white;
 cursor:pointer;
-font-size:14px;
 
 }
 
@@ -48,42 +48,51 @@ background:#1d4ed8;
 
 display:flex;
 justify-content:center;
-gap:12px;
+gap:10px;
 flex-wrap:wrap;
-margin-top:20px;
 
 }
 
 .player{
 
 background:#1e293b;
-padding:12px;
-border-radius:12px;
-width:140px;
-box-shadow:0 4px 10px rgba(0,0,0,0.4);
+border-radius:10px;
+padding:10px;
+width:150px;
 
 }
 
 .player h3{
+margin:4px 0;
+font-size:16px;
+}
 
-margin:5px 0;
-
+.stat{
+font-size:14px;
+margin:2px 0;
 }
 
 .stars{
-
-font-size:18px;
-margin:6px 0;
-
+margin-top:5px;
 }
 
 .budget{
 
-margin-top:20px;
+margin-top:15px;
 font-size:18px;
 background:#1e293b;
+padding:8px 14px;
+border-radius:8px;
+display:inline-block;
+
+}
+
+.resultBox{
+
+margin-top:15px;
 padding:10px;
-border-radius:10px;
+border:1px solid #334155;
+border-radius:8px;
 display:inline-block;
 
 }
@@ -91,7 +100,7 @@ display:inline-block;
 table{
 
 margin:auto;
-margin-top:25px;
+margin-top:20px;
 border-collapse:collapse;
 width:90%;
 max-width:500px;
@@ -99,21 +108,12 @@ max-width:500px;
 }
 
 th,td{
-
 padding:8px;
 border-bottom:1px solid #334155;
-
 }
 
 th{
 background:#1e293b;
-}
-
-.resultBox{
-
-margin-top:15px;
-font-size:16px;
-
 }
 
 </style>
@@ -126,28 +126,25 @@ font-size:16px;
 
 <div class="controls">
 
-<button onclick="playMatch()">⚽ שחק משחק</button>
-<button onclick="buyStar()">⭐ קנה כוכב</button>
-<button onclick="resetGame()">🔄 איפוס</button>
+<button onclick="playMatch()">⚽ משחק שבועי</button>
+<button onclick="resetGame()">🔄 איפוס קבוצה</button>
 
 </div>
 
-<div class="players" id="players"></div>
+<div id="players" class="players"></div>
 
-<div class="budget" id="budget"></div>
+<div id="budget" class="budget"></div>
 
-<div class="resultBox" id="result"></div>
+<div id="result" class="resultBox"></div>
 
 <table>
 
 <thead>
 
 <tr>
-
 <th>קבוצה</th>
 <th>משחקים</th>
-<th>נק'</th>
-
+<th>נקודות</th>
 </tr>
 
 </thead>
@@ -167,17 +164,27 @@ game={
 budget:1000,
 
 stars:0,
-
 superStars:0,
-
 blueStars:0,
 
 team:{
+games:0,
+points:0
+},
 
-points:0,
-games:0
+players:[]
 
 }
+
+for(let i=1;i<=5;i++){
+
+game.players.push({
+
+attack:1,
+defense:1,
+fitness:1
+
+})
 
 }
 
@@ -189,35 +196,62 @@ localStorage.setItem("soccerGame",JSON.stringify(game))
 
 }
 
+function starView(){
+
+let s=""
+
+s+="⭐".repeat(game.stars)
+
+if(game.superStars>0){
+
+s+=" ⭐"+game.superStars
+
+}
+
+if(game.blueStars>0){
+
+s+=" 🔵"+game.blueStars
+
+}
+
+return s
+
+}
+
 function renderPlayers(){
 
 let container=document.getElementById("players")
 
 container.innerHTML=""
 
-for(let i=1;i<=5;i++){
+game.players.forEach((p,i)=>{
+
+let priceAttack=50+(p.attack*10)
+let priceDefense=50+(p.defense*10)
+let priceFitness=50+(p.fitness*10)
 
 container.innerHTML+=`
 
 <div class="player">
 
-<h3>שחקן ${i}</h3>
+<h3>שחקן ${i+1}</h3>
 
-<div class="stars">
+<div class="stat">⚔ התקפה ${p.attack}</div>
+<button onclick="train(${i},'attack')">אימון (${priceAttack})</button>
 
-${"⭐".repeat(game.stars)}
+<div class="stat">🛡 הגנה ${p.defense}</div>
+<button onclick="train(${i},'defense')">אימון (${priceDefense})</button>
 
-${game.superStars>0?`⭐${game.superStars}`:""}
+<div class="stat">⚡ כושר ${p.fitness}</div>
+<button onclick="train(${i},'fitness')">אימון (${priceFitness})</button>
 
-${game.blueStars>0?`🔷${game.blueStars}`:""}
-
-</div>
+<div class="stars">${starView()}</div>
 
 </div>
 
 `
 
-}
+})
 
 document.getElementById("budget").innerHTML="תקציב: "+game.budget+"$"
 
@@ -225,9 +259,11 @@ renderLeague()
 
 }
 
-function buyStar(){
+function train(i,type){
 
-let price=100
+let player=game.players[i]
+
+let price=50+(player[type]*10)
 
 if(game.budget<price){
 
@@ -238,6 +274,8 @@ return
 }
 
 game.budget-=price
+
+player[type]++
 
 game.stars++
 
@@ -264,17 +302,14 @@ renderPlayers()
 function playMatch(){
 
 let goalsFor=Math.floor(Math.random()*5)
-
 let goalsAgainst=Math.floor(Math.random()*5)
 
 let result="תיקו"
-
 let points=1
 
 if(goalsFor>goalsAgainst){
 
 result="ניצחון"
-
 points=3
 
 }
@@ -282,19 +317,27 @@ points=3
 if(goalsFor<goalsAgainst){
 
 result="הפסד"
-
 points=0
 
 }
 
-game.team.points+=points
 game.team.games++
+game.team.points+=points
+
+let income=150
+
+if(game.team.games%5===0){
+
+income+=200
+
+}
+
+game.budget+=income
 
 document.getElementById("result").innerHTML=
 
-result+" "+goalsFor+"-"+goalsAgainst
-
-game.budget+=150
+result+" "+goalsFor+"-"+goalsAgainst+
+"<br>הכנסה: "+income+"$"
 
 save()
 
@@ -309,27 +352,21 @@ let table=document.getElementById("league")
 table.innerHTML=`
 
 <tr>
-
 <td>הקבוצה שלך</td>
 <td>${game.team.games}</td>
 <td>${game.team.points}</td>
-
 </tr>
 
 <tr>
-
 <td>קבוצה א</td>
 <td>${game.team.games}</td>
 <td>${game.team.points-2}</td>
-
 </tr>
 
 <tr>
-
 <td>קבוצה ב</td>
 <td>${game.team.games}</td>
 <td>${game.team.points-4}</td>
-
 </tr>
 
 `
@@ -338,9 +375,12 @@ table.innerHTML=`
 
 function resetGame(){
 
-localStorage.removeItem("soccerGame")
+if(confirm("לפתוח קבוצה חדשה?")){
 
+localStorage.removeItem("soccerGame")
 location.reload()
+
+}
 
 }
 
