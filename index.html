@@ -73,18 +73,16 @@ button { padding: 8px 16px; margin: 5px; border: none; border-radius: 6px; curso
 <script>
 // --- פונקציות בסיס ---
 function randomStat(){ return Math.floor(Math.random()*30)+1; }
-
-// מערכת כוכבים
 function starsColored(val){
-    let yellow = Math.floor(val/10); // כל 10 נקודות = ⭐ צהוב
-    let blue = Math.floor(yellow/5); // כל 5 כוכבים צהובים = 🔷 כחול
-    yellow = yellow % 5;
+    let yellow=Math.floor(val/10);
+    let blue=Math.floor(yellow/5);
+    yellow=yellow%5;
     return '🔷'.repeat(blue)+'⭐'.repeat(yellow);
 }
 
 // --- יצירת קבוצה ---
 function createTeam(){
-    const name = document.getElementById("teamName").value;
+    const name=document.getElementById("teamName").value;
     if(!name) return alert("אנא הכנס שם קבוצה");
 
     let players=[];
