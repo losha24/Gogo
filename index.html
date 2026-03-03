@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
+
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Football Manager Lite</title>
+<title>Football Manager</title>
 
 <style>
 
@@ -12,120 +14,108 @@ body{
 font-family:Arial;
 background:#0f172a;
 color:white;
-margin:0;
 text-align:center;
+margin:0;
 }
 
 header{
-padding:20px;
-font-size:26px;
+font-size:28px;
 font-weight:bold;
+margin-top:10px;
 }
 
 .logo{
 width:80px;
 display:block;
 margin:auto;
-margin-top:10px;
+margin-top:5px;
 }
 
-.buttons{
-display:flex;
-justify-content:center;
-flex-wrap:wrap;
+.container{
+max-width:900px;
+margin:auto;
+}
+
+.players{
+display:grid;
+grid-template-columns:repeat(5,1fr);
 gap:10px;
-margin:15px;
+margin-top:20px;
+}
+
+.player{
+background:#1e293b;
+padding:10px;
+border-radius:10px;
+}
+
+.stars{
+color:gold;
+font-size:18px;
+}
+
+.blue{
+color:#38bdf8;
 }
 
 button{
-padding:10px 16px;
+padding:8px 12px;
 border:none;
 border-radius:8px;
+margin:4px;
+cursor:pointer;
 background:#2563eb;
 color:white;
-cursor:pointer;
-font-size:14px;
 }
 
 button:hover{
 background:#1d4ed8;
 }
 
-.team{
-display:flex;
-justify-content:center;
-gap:15px;
-margin-top:20px;
-flex-wrap:wrap;
-}
-
-.player{
-background:#1e293b;
-padding:12px;
-border-radius:10px;
-width:120px;
-}
-
-.stars{
-margin-top:6px;
-}
-
-.star{
-color:gold;
-font-size:18px;
-}
-
-.starNumber{
-background:gold;
-color:black;
-border-radius:50%;
-padding:4px 6px;
-font-size:12px;
-margin:2px;
-}
-
-.starBlue{
-background:#3b82f6;
-color:white;
-border-radius:50%;
-padding:4px 6px;
-font-size:12px;
-margin:2px;
-}
-
-.budget{
-margin-top:25px;
-font-size:20px;
+.market{
+display:none;
 background:#111827;
-padding:12px;
+padding:15px;
+margin-top:20px;
 border-radius:10px;
-width:220px;
-margin-left:auto;
-margin-right:auto;
+}
+
+.tableBox{
+display:none;
+background:#111827;
+padding:15px;
+margin-top:20px;
+border-radius:10px;
 }
 
 table{
-margin:auto;
-margin-top:20px;
+width:100%;
 border-collapse:collapse;
-width:90%;
 }
 
-th,td{
+td,th{
 border:1px solid #334155;
-padding:8px;
+padding:6px;
 }
 
-th{
-background:#1e293b;
+.budget{
+margin-top:20px;
+font-size:22px;
+background:#111827;
+padding:10px;
+border-radius:10px;
 }
 
-.section{
-display:none;
+.resultBox{
+margin-top:20px;
+background:#111827;
+padding:10px;
+border-radius:10px;
 }
 
-.active{
-display:block;
+footer{
+margin-top:30px;
+opacity:0.7;
 }
 
 </style>
@@ -138,145 +128,163 @@ display:block;
 
 Football Manager
 
-<img src="logo.png" class="logo">
+<img src="soccer-logo.png" class="logo">
 
 </header>
 
-<div class="buttons">
+<div class="container">
 
-<button onclick="openSection('team')">הקבוצה שלי</button>
+<div class="players" id="players"></div>
 
-<button onclick="openSection('market')">שוק שחקנים</button>
+<div class="budget">
+תקציב: ₪ <span id="money">0</span>
+</div>
 
-<button onclick="refreshMarket()">רענון שוק</button>
+<div>
 
-<button onclick="openSection('matches')">טבלת משחקים</button>
+<button onclick="train('attack')">אימון התקפה</button>
+<button onclick="train('defense')">אימון הגנה</button>
+<button onclick="train('fitness')">אימון כושר</button>
 
-<button onclick="openSection('league')">טבלת ליגה</button>
+<button onclick="playMatch()">משחק שבועי</button>
+
+<button onclick="toggleMarket()">שוק שחקנים</button>
+
+<button onclick="toggleTables()">טבלת משחקים</button>
+
+<button onclick="resetGame()">איפוס</button>
 
 </div>
 
+<div class="resultBox" id="result"></div>
 
-<div id="team" class="section active">
+<div class="market" id="market"></div>
 
-<div class="team" id="players"></div>
+<div class="tableBox" id="tables">
 
-<div class="budget" id="budget">
-תקציב: 1000
-</div>
-
-</div>
-
-
-<div id="market" class="section">
-
-<h2>שוק שחקנים</h2>
-
-<div id="marketPlayers"></div>
-
-<br>
-
-<button onclick="goBack()">חזרה</button>
-
-</div>
-
-
-<div id="matches" class="section">
-
-<h2>תוצאות משחקים</h2>
+<h3>טבלת ליגה</h3>
 
 <table>
 
-<thead>
 <tr>
-<th>משחק</th>
-<th>תוצאה</th>
-<th>שערים</th>
-</tr>
-</thead>
-
-<tbody id="matchTable"></tbody>
-
-</table>
-
-<button onclick="goBack()">חזרה</button>
-
-</div>
-
-
-
-<div id="league" class="section">
-
-<h2>טבלת ליגה</h2>
-
-<table>
-
-<thead>
-<tr>
-<th>קבוצה</th>
-<th>נק'</th>
-<th>ניצחונות</th>
+<th>משחקים</th>
+<th>נצחונות</th>
+<th>תיקו</th>
 <th>הפסדים</th>
+<th>נקודות</th>
 </tr>
-</thead>
 
-<tbody id="leagueTable"></tbody>
+<tr>
+<td id="g"></td>
+<td id="w"></td>
+<td id="d"></td>
+<td id="l"></td>
+<td id="p"></td>
+</tr>
 
 </table>
 
-<button onclick="goBack()">חזרה</button>
+<h3>עונות</h3>
+<div id="seasons"></div>
+
+<h3>אליפויות</h3>
+<div id="titles"></div>
 
 </div>
 
+</div>
 
+<footer>
+© אלכסיי זבודיסקר
+</footer>
 
 <script>
 
-let budget = 1000
+let game
 
-const players = [
-{name:"שחקן 1",stars:1},
-{name:"שחקן 2",stars:2},
-{name:"שחקן 3",stars:3},
-{name:"שחקן 4",stars:4},
-{name:"שחקן 5",stars:5}
-]
+function starDisplay(points){
 
+let yellow=Math.floor(points/10)
+let blue=Math.floor(yellow/10)
 
-function openSection(id){
-
-document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"))
-
-document.getElementById(id).classList.add("active")
+return "⭐".repeat(yellow-blue*10)+" <span class='blue'>🔵"+blue+"</span>"
 
 }
 
+function randomPlayer(){
 
-function goBack(){
+return{
 
-openSection("team")
+attack:10+Math.floor(Math.random()*30),
+defense:10+Math.floor(Math.random()*30),
+fitness:10+Math.floor(Math.random()*30)
 
 }
 
+}
 
+function init(){
 
-function renderPlayers(){
+let saved=localStorage.getItem("footballGame")
 
-const div = document.getElementById("players")
+if(saved){
 
-div.innerHTML=""
+game=JSON.parse(saved)
 
-players.forEach(p=>{
+}else{
 
-let starsHTML = buildStars(p.stars)
+game={
+money:100000,
+players:[],
+games:0,
+wins:0,
+draws:0,
+losses:0,
+points:0,
+season:1,
+titles:0,
+trainCost:1000
+}
 
-div.innerHTML+=`
+for(let i=0;i<11;i++) game.players.push(randomPlayer())
+
+}
+
+render()
+
+}
+
+function save(){
+
+localStorage.setItem("footballGame",JSON.stringify(game))
+
+}
+
+function render(){
+
+document.getElementById("money").innerText=game.money
+
+document.getElementById("g").innerText=game.games
+document.getElementById("w").innerText=game.wins
+document.getElementById("d").innerText=game.draws
+document.getElementById("l").innerText=game.losses
+document.getElementById("p").innerText=game.points
+
+let html=""
+
+game.players.forEach((p,i)=>{
+
+html+=`
 
 <div class="player">
 
-${p.name}
+שחקן ${i+1}
 
-<div class="stars">${starsHTML}</div>
+<div>התקפה ${starDisplay(p.attack)}</div>
+<div>הגנה ${starDisplay(p.defense)}</div>
+<div>כושר ${starDisplay(p.fitness)}</div>
+
+<button onclick="sellPlayer(${i})">מכירה</button>
 
 </div>
 
@@ -284,114 +292,182 @@ ${p.name}
 
 })
 
-}
+document.getElementById("players").innerHTML=html
 
-
-
-function buildStars(count){
-
-let html=""
-
-let normal = count % 5
-
-let big = Math.floor(count/5)
-
-for(let i=0;i<big;i++){
-
-html+=`<span class="starNumber">1</span>`
+save()
 
 }
 
-for(let i=0;i<normal;i++){
+function train(type){
 
-html+=`<span class="star">★</span>`
+if(game.money<game.trainCost) return
 
-}
+game.money-=game.trainCost
 
-return html
+game.trainCost+=500
 
-}
+game.players.forEach(p=>{
 
-
-
-function refreshMarket(){
-
-alert("השוק התרענן")
-
-}
-
-
-
-function generateMatches(){
-
-const table = document.getElementById("matchTable")
-
-for(let i=1;i<=10;i++){
-
-let g1 = Math.floor(Math.random()*5)
-
-let g2 = Math.floor(Math.random()*5)
-
-let result = g1>g2?"ניצחון":g1<g2?"הפסד":"תיקו"
-
-table.innerHTML+=`
-
-<tr>
-
-<td>${i}</td>
-
-<td>${result}</td>
-
-<td>${g1} - ${g2}</td>
-
-</tr>
-
-`
-
-}
-
-}
-
-
-
-function generateLeague(){
-
-const table = document.getElementById("leagueTable")
-
-const teams = ["שלי","AI 1","AI 2","AI 3","AI 4"]
-
-teams.forEach(t=>{
-
-table.innerHTML+=`
-
-<tr>
-
-<td>${t}</td>
-
-<td>${Math.floor(Math.random()*30)}</td>
-
-<td>${Math.floor(Math.random()*10)}</td>
-
-<td>${Math.floor(Math.random()*10)}</td>
-
-</tr>
-
-`
+p[type]+=2
 
 })
 
+render()
+
 }
 
+function playMatch(){
 
+let power=0
 
-renderPlayers()
+game.players.forEach(p=>{
 
-generateMatches()
+power+=p.attack+p.defense+p.fitness
 
-generateLeague()
+})
+
+let enemy=300+Math.random()*200
+
+let goals=Math.floor(power/100+Math.random()*3)
+let enemyGoals=Math.floor(enemy/100+Math.random()*3)
+
+let income=5000+Math.random()*3000
+
+game.money+=income
+
+let text=""
+
+if(goals>enemyGoals){
+
+game.wins++
+game.points+=3
+text="ניצחון"
+
+}
+
+else if(goals==enemyGoals){
+
+game.draws++
+game.points+=1
+text="תיקו"
+
+}
+
+else{
+
+game.losses++
+text="הפסד"
+
+}
+
+game.games++
+
+if(game.games%5==0){
+
+game.money+=10000
+
+}
+
+document.getElementById("result").innerHTML=
+
+`
+תוצאה: ${goals} - ${enemyGoals}<br>
+${text}<br>
+הכנסה ₪${income}
+`
+
+render()
+
+}
+
+function toggleMarket(){
+
+let m=document.getElementById("market")
+
+if(m.style.display=="block"){
+
+m.style.display="none"
+return
+
+}
+
+let html="<h3>שוק שחקנים</h3>"
+
+for(let i=0;i<5;i++){
+
+let p=randomPlayer()
+
+let price=(p.attack+p.defense+p.fitness)*100
+
+html+=`
+
+<div>
+
+התקפה ${p.attack} הגנה ${p.defense} כושר ${p.fitness}
+
+<button onclick='buy(${JSON.stringify(p)},${price})'>
+
+קנה ₪${price}
+
+</button>
+
+</div>
+
+`
+
+}
+
+m.innerHTML=html
+
+m.style.display="block"
+
+}
+
+function buy(p,price){
+
+if(game.money<price) return
+
+game.money-=price
+
+game.players.push(p)
+
+render()
+
+}
+
+function sellPlayer(i){
+
+let p=game.players[i]
+
+let price=(p.attack+p.defense+p.fitness)*50
+
+game.money+=price
+
+game.players.splice(i,1)
+
+render()
+
+}
+
+function toggleTables(){
+
+let t=document.getElementById("tables")
+
+t.style.display=t.style.display=="block"?"none":"block"
+
+}
+
+function resetGame(){
+
+localStorage.removeItem("footballGame")
+
+location.reload()
+
+}
+
+init()
 
 </script>
-
 
 </body>
 </html>
