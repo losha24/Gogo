@@ -1,4 +1,4 @@
-const CACHE_NAME = "gogo-v2.0.10";
+const CACHE_NAME = "gogo-v2.1";
 
 const urlsToCache = [
 "/",
