@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go-Go Football Game</title>
+<link rel="icon" type="image/png" sizes="192x192" href="soccer_logo.png">
+<style>
+body { font-family: Arial, sans-serif; background: #0f172a; color: white; text-align: center; margin: 0; padding: 20px; }
+.logo { width:120px; margin: 10px auto; display:block; }
+button { padding: 8px 16px; margin: 5px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+.primary { background: #22c55e; color: white; }
+.danger { background: #ef4444; color: white; }
+.train-btn { background: #3b82f6; color: white; display:flex; align-items:center; gap:5px; margin:5px; }
+.train-row { display:flex; justify-content:center; flex-wrap:wrap; margin-bottom:10px; gap:5px; }
+.player, .market-player { background: #334155; margin: 5px; padding: 8px; border-radius: 6px; font-size: 14px; display:flex; flex-direction:column; align-items:center; width: 140px; }
+.player-stats { text-align:center; margin-bottom:5px; }
+#budget { font-weight: bold; margin:10px auto; padding:5px; border-radius:6px; max-width:400px; display:block; border:2px solid #334155; font-size:16px; }
+.green { color: #22c55e; }
+.red { color: #ef4444; }
+.bonus { color: #facc15; font-weight:bold; font-size:16px; }
+.table { background:#1e293b; padding:10px; border-radius:8px; margin:10px auto; max-width:400px; text-align:right; display:none; }
+#market { display:none; margin-top:10px; }
+.match-box { background:#1e293b; padding:10px; border-radius:8px; max-width:400px; margin:10px auto; text-align:right; }
+.flex-row { display:flex; justify-content:center; flex-wrap:wrap; gap:5px; }
+</style>
+</head>
+<body>
+<img src="soccer_logo.png" alt="לוגו Go-Go" class="logo">
+<div id="setup">
+    <input type="text" id="teamName" placeholder="הכנס שם קבוצה">
+    <br>
+    <button class="primary" onclick="createTeam()">צור קבוצה</button>
+</div>
+<div id="game" style="display:none;">
+    <h2 id="teamTitle"></h2>
+    <div id="players" class="flex-row"></div>
+    <span id="budget"></span>
+    <h3>אימונים ומשחקים</h3>
+    <div class="train-row">
+        <button class="train-btn" onclick="train('attack')">⚔️ התקפה</button>
+        <button class="train-btn" onclick="train('defense')">🛡️ הגנה</button>
+        <button class="train-btn" onclick="train('speed')">💨 מהירות</button>
+        <button class="primary" onclick="toggleTables()">📊 טבלת משחקים</button>
+    </div>
+    <button class="primary" onclick="toggleMarket()">🛒 שוק שחקנים</button>
+    <div id="market" class="table">
+        <button class="danger" onclick="resetMarket()">איפוס שוק (1% מהתקציב)</button>
+        <div id="marketPlayers" class="flex-row"></div>
+    </div>
+    <button class="primary" onclick="playMatch()">⚽ משחק שבועי</button>
+    <div id="matchResult" class="match-box"></div>
+    <div id="tablesContainer">
+        <div id="leagueTable" class="table"></div>
+        <div id="seasonTable" class="table"></div>
+        <div id="championshipTable" class="table"></div>
+    </div>
+    <br>
+    <button class="danger" onclick="resetGame()">איפוס משחק</button>
+    <p style="margin-top:20px; font-size:12px;">© אלכסיי זבודיסקר</p>
+</div>
+<script>
+// כאן יש להכניס את כל הקוד המלא של המשחק עם כל המערכות: אימונים, כוכבים, שוק שחקנים, משחק שבועי, ספונסרים וכו.
+// עקוב אחרי הגרסא האחרונה שלך והכנס אותה כאן.
+</script>
+</body>
+</html>
