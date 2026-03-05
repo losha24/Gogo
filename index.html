@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
+
 <head>
 
 <meta charset="UTF-8">
@@ -7,7 +8,7 @@
 
 <title>Go-Go Football Game</title>
 
-<link rel="icon" type="image/png" href="soccer_logo.png">
+<link rel="icon" type="image/png" sizes="192x192" href="soccer_logo.png">
 
 <style>
 
@@ -17,7 +18,7 @@ background:#0f172a;
 color:white;
 text-align:center;
 margin:0;
-padding:20px;
+padding:15px;
 }
 
 .logo{
@@ -26,36 +27,24 @@ display:block;
 margin:auto;
 }
 
-#teamTitle{
-margin-top:10px;
+.teamName{
 font-size:22px;
-font-weight:bold;
-color:#22c55e;
+margin-top:5px;
+margin-bottom:10px;
 }
 
 button{
 padding:8px 14px;
-margin:5px;
+margin:4px;
 border:none;
 border-radius:6px;
-cursor:pointer;
 font-weight:bold;
+cursor:pointer;
 }
 
-.primary{
-background:#22c55e;
-color:white;
-}
-
-.danger{
-background:#ef4444;
-color:white;
-}
-
-.train{
-background:#3b82f6;
-color:white;
-}
+.primary{background:#22c55e;color:white;}
+.danger{background:#ef4444;color:white;}
+.train{background:#3b82f6;color:white;}
 
 .flex{
 display:flex;
@@ -66,30 +55,31 @@ gap:8px;
 
 .player{
 background:#1e293b;
-padding:10px;
-border-radius:8px;
 width:140px;
+padding:8px;
+border-radius:8px;
 font-size:13px;
 }
 
 .market-player{
 background:#334155;
-padding:10px;
+width:140px;
+padding:8px;
 border-radius:8px;
-width:150px;
+font-size:13px;
 }
 
 .table{
 background:#1e293b;
-padding:10px;
-border-radius:8px;
 max-width:420px;
 margin:10px auto;
+padding:10px;
+border-radius:8px;
+display:none;
 }
 
 .green{color:#22c55e;}
 .red{color:#ef4444;}
-.blue{color:#3b82f6;}
 
 </style>
 
@@ -112,59 +102,33 @@ margin:10px auto;
 
 <div id="game" style="display:none">
 
-<div id="teamTitle"></div>
+<div id="teamTitle" class="teamName"></div>
 
-<br>
+<div id="budget"></div>
 
 <div id="players" class="flex"></div>
 
-<h3 id="budget"></h3>
-
 <h3>אימונים</h3>
 
-<button class="train" onclick="train('attack')">⚔️ התקפה</button>
-
-<button class="train" onclick="train('defense')">🛡️ הגנה</button>
-
+<button class="train" onclick="train('attack')">⚔ התקפה</button>
+<button class="train" onclick="train('defense')">🛡 הגנה</button>
 <button class="train" onclick="train('speed')">💨 מהירות</button>
-
-<br><br>
-
-<button class="primary" onclick="playMatch()">⚽ משחק שבועי</button>
-
-<div id="matchResult"></div>
 
 <br>
 
-<button class="primary" onclick="toggleMarket()">🛒 שוק שחקנים</button>
+<button class="primary" onclick="playMatch()">משחק שבועי</button>
 
-<div id="market" style="display:none">
+<button class="primary" onclick="toggleMarket()">שוק שחקנים</button>
+
+<button class="primary" onclick="toggleTables()">טבלת משחקים</button>
+
+<div id="market" class="table">
 
 <div id="marketPlayers" class="flex"></div>
 
 </div>
 
-<br>
-
-<button class="primary" onclick="toggleSponsor()">🤝 ספונסר</button>
-
-<div id="sponsorBox" style="display:none">
-
-<button onclick="chooseSponsor(5000)">Local Shop +5000</button>
-
-<button onclick="chooseSponsor(10000)">Tech Corp +10000</button>
-
-<button onclick="chooseSponsor(15000)">Mega Sports +15000</button>
-
-</div>
-
-<br>
-
-<div id="leagueTable" class="table"></div>
-
-<div id="seasonTable" class="table"></div>
-
-<div id="champTable" class="table"></div>
+<div id="tables" class="table"></div>
 
 <br>
 
@@ -172,16 +136,63 @@ margin:10px auto;
 
 </div>
 
-
 <script>
 
 function randomStat(){
-
 return Math.floor(Math.random()*30)+1
+}
+
+function randomStars(){
+return Math.floor(Math.random()*3)+1
+}
+
+function createStarSystem(){
+return{
+attack:{y:randomStars(),b:0,r:0},
+defense:{y:randomStars(),b:0,r:0},
+speed:{y:randomStars(),b:0,r:0}
+}
+}
+
+function createProgress(){
+return{attack:0,defense:0,speed:0}
+}
+
+function renderStars(p,type){
+
+let s=p.stars[type]
+
+return "🔴".repeat(s.r)+"🔵".repeat(s.b)+"⭐".repeat(s.y)
 
 }
 
+function trainStar(player,type){
 
+player.progress[type]++
+
+if(player.progress[type]>=5){
+
+player.progress[type]=0
+
+player.stars[type].y++
+
+if(player.stars[type].y>=3){
+
+player.stars[type].y=0
+player.stars[type].b++
+
+if(player.stars[type].b>=3){
+
+player.stars[type].b=0
+player.stars[type].r++
+
+}
+
+}
+
+}
+
+}
 
 function createTeam(){
 
@@ -193,35 +204,23 @@ let players=[]
 
 for(let i=1;i<=5;i++){
 
-let attack=randomStat()
-
-let defense=randomStat()
-
-let speed=randomStat()
+let a=randomStat()
+let d=randomStat()
+let s=randomStat()
 
 players.push({
 
 id:i,
 
-attack,
+attack:a,
+defense:d,
+speed:s,
 
-defense,
+value:(a+d+s)*1000,
 
-speed,
+stars:createStarSystem(),
 
-value:(attack+defense+speed)*1000,
-
-stars:{
-
-attack:{y:Math.floor(Math.random()*3)+1,b:0,r:0},
-
-defense:{y:Math.floor(Math.random()*3)+1,b:0,r:0},
-
-speed:{y:Math.floor(Math.random()*3)+1,b:0,r:0}
-
-},
-
-progress:{attack:0,defense:0,speed:0}
+progress:createProgress()
 
 })
 
@@ -229,21 +228,13 @@ progress:{attack:0,defense:0,speed:0}
 
 let data={
 
-team:name,
+teamName:name,
 
 budget:100000,
 
-players,
+players:players,
 
-league:{played:0,won:0,draw:0,lost:0,points:0},
-
-seasons:0,
-
-champ:0,
-
-history:[],
-
-sponsor:false
+league:{played:0,won:0,draw:0,lost:0,points:0}
 
 }
 
@@ -253,50 +244,6 @@ loadGame()
 
 }
 
-
-
-function renderStars(p,type){
-
-let s=p.stars[type]
-
-return "🔴".repeat(s.r)+"🔵".repeat(s.b)+"⭐".repeat(s.y)
-
-}
-
-
-
-function trainStar(p,type){
-
-p.progress[type]++
-
-if(p.progress[type]>=5){
-
-p.progress[type]=0
-
-p.stars[type].y++
-
-if(p.stars[type].y>=3){
-
-p.stars[type].y=0
-
-p.stars[type].b++
-
-if(p.stars[type].b>=3){
-
-p.stars[type].b=0
-
-p.stars[type].r++
-
-}
-
-}
-
-}
-
-}
-
-
-
 function loadGame(){
 
 let data=JSON.parse(localStorage.getItem("miniFootball"))
@@ -304,32 +251,35 @@ let data=JSON.parse(localStorage.getItem("miniFootball"))
 if(!data)return
 
 document.getElementById("setup").style.display="none"
-
 document.getElementById("game").style.display="block"
 
-document.getElementById("teamTitle").innerText=data.team
+document.getElementById("teamTitle").innerText=data.teamName
 
-document.getElementById("budget").innerText="תקציב: "+data.budget
+let budget=document.getElementById("budget")
 
-let pdiv=document.getElementById("players")
+budget.innerText="תקציב: $"+data.budget
 
-pdiv.innerHTML=""
+budget.className=data.budget>=0?"green":"red"
+
+let playersDiv=document.getElementById("players")
+
+playersDiv.innerHTML=""
 
 data.players.forEach(p=>{
 
-pdiv.innerHTML+=`
+playersDiv.innerHTML+=`
 
 <div class="player">
 
-<b>שחקן ${p.id}</b>
+שחקן ${p.id}
 
 <br>
 
-⚔️ ${renderStars(p,'attack')}
+⚔ ${renderStars(p,'attack')}
 
 <br>
 
-🛡️ ${renderStars(p,'defense')}
+🛡 ${renderStars(p,'defense')}
 
 <br>
 
@@ -349,31 +299,29 @@ pdiv.innerHTML+=`
 
 })
 
-updateTables(data)
-
 renderMarket()
 
 }
-
-
 
 function train(type){
 
 let data=JSON.parse(localStorage.getItem("miniFootball"))
 
-if(data.budget<3000)return alert("אין כסף")
+let cost=3000
+
+if(data.budget<cost)return alert("אין כסף")
 
 data.players.forEach(p=>{
 
 trainStar(p,type)
 
-p[type]++
+p[type]+=1
 
 p.value=(p.attack+p.defense+p.speed)*1000
 
 })
 
-data.budget-=3000
+data.budget-=cost
 
 localStorage.setItem("miniFootball",JSON.stringify(data))
 
@@ -381,115 +329,103 @@ loadGame()
 
 }
 
-
-
 function playMatch(){
 
 let data=JSON.parse(localStorage.getItem("miniFootball"))
 
-let power=0
+let team=0
 
 data.players.forEach(p=>{
-
-power+=p.attack+p.defense+p.speed
-
+team+=p.attack+p.defense+p.speed
 })
 
-let rival=Math.random()*power
+let rival=Math.floor(Math.random()*150)+50
 
-let goals=Math.floor(Math.random()*5)
+let score=Math.floor(team/100)
 
-let rivalGoals=Math.floor(Math.random()*5)
+let rivalScore=Math.floor(rival/100)
 
-let color="blue"
+let result="תיקו"
 
-if(goals>rivalGoals){
+if(score>rivalScore){
 
 data.league.won++
-
 data.league.points+=3
-
-color="green"
+result="ניצחון"
 
 }
 
-else if(goals<rivalGoals){
+else if(score<rivalScore){
 
 data.league.lost++
-
-color="red"
+result="הפסד"
 
 }
 
 else{
 
 data.league.draw++
-
 data.league.points++
 
 }
 
 data.league.played++
 
-let income=5000+Math.floor(Math.random()*5000)
+let income=Math.floor(Math.random()*5000)+3000
 
-let cost=1000+Math.floor(Math.random()*3000)
-
-data.budget+=income-cost
-
-let bonus=""
-
-if(data.league.played%5==0){
-
-let b=1000+Math.floor(Math.random()*24000)
-
-data.budget+=b
-
-bonus=" בונוס "+b
-
-}
-
-document.getElementById("matchResult").innerHTML=
-
-`<h3 class="${color}">תוצאה ${goals}-${rivalGoals} ${bonus}</h3>`
+data.budget+=income
 
 localStorage.setItem("miniFootball",JSON.stringify(data))
+
+alert(result+" "+score+"-"+rivalScore)
 
 loadGame()
 
 }
 
+function toggleMarket(){
 
+let m=document.getElementById("market")
+
+m.style.display=m.style.display=="block"?"none":"block"
+
+}
 
 function renderMarket(){
 
-let box=document.getElementById("marketPlayers")
+let div=document.getElementById("marketPlayers")
 
-box.innerHTML=""
+div.innerHTML=""
 
 for(let i=1;i<=5;i++){
 
 let a=randomStat()
-
 let d=randomStat()
-
 let s=randomStat()
 
-let val=(a+d+s)*1000
+let price=(a+d+s)*900
 
-box.innerHTML+=`
+div.innerHTML+=`
 
 <div class="market-player">
 
-⚔️${a} 🛡️${d} 💨${s}
+⚔ ${a}
 
 <br>
 
-💰 ${val}
+🛡 ${d}
 
 <br>
 
-<button onclick="buyPlayer(${val},${a},${d},${s})">קנה</button>
+💨 ${s}
+
+<br>
+
+💰 ${price}
+
+<br>
+
+<button class="primary" onclick="buyPlayer(${price},${a},${d},${s})">קנה</button>
 
 </div>
 
@@ -499,33 +435,31 @@ box.innerHTML+=`
 
 }
 
-
-
 function buyPlayer(val,a,d,s){
 
 let data=JSON.parse(localStorage.getItem("miniFootball"))
 
-if(data.players.length>=15)return alert("מקסימום 15")
+if(data.players.length>=15)
+return alert("מקסימום 15 שחקנים")
 
-if(data.budget<val)return alert("אין כסף")
+if(data.budget<val)
+return alert("אין מספיק כסף")
 
 let id=data.players.length+1
 
 data.players.push({
 
-id,
+id:id,
 
 attack:a,
-
 defense:d,
-
 speed:s,
 
 value:val,
 
-stars:{attack:{y:1,b:0,r:0},defense:{y:1,b:0,r:0},speed:{y:1,b:0,r:0}},
+stars:createStarSystem(),
 
-progress:{attack:0,defense:0,speed:0}
+progress:createProgress()
 
 })
 
@@ -537,19 +471,18 @@ loadGame()
 
 }
 
-
-
 function sellPlayer(id){
 
 let data=JSON.parse(localStorage.getItem("miniFootball"))
 
-if(data.players.length<=5)return alert("חייבים לפחות 5")
+if(data.players.length<=5)
+return alert("אי אפשר לרדת מתחת ל5 שחקנים")
 
 let index=data.players.findIndex(p=>p.id==id)
 
-let val=Math.floor(data.players[index].value*0.5)
+let value=Math.floor(data.players[index].value*0.5)
 
-data.budget+=val
+data.budget+=value
 
 data.players.splice(index,1)
 
@@ -559,69 +492,31 @@ loadGame()
 
 }
 
-
-
-function toggleMarket(){
-
-let m=document.getElementById("market")
-
-m.style.display=m.style.display=="none"?"block":"none"
-
-}
-
-
-
-function toggleSponsor(){
-
-let m=document.getElementById("sponsorBox")
-
-m.style.display=m.style.display=="none"?"block":"none"
-
-}
-
-
-
-function chooseSponsor(val){
+function toggleTables(){
 
 let data=JSON.parse(localStorage.getItem("miniFootball"))
 
-if(data.sponsor)return alert("כבר נבחר")
+let div=document.getElementById("tables")
 
-data.budget+=val
+div.style.display=div.style.display=="block"?"none":"block"
 
-data.sponsor=true
+div.innerHTML=
 
-localStorage.setItem("miniFootball",JSON.stringify(data))
+"משחקים: "+data.league.played+
 
-loadGame()
+"<br>ניצחונות: "+data.league.won+
 
-}
+"<br>תיקו: "+data.league.draw+
 
+"<br>הפסדים: "+data.league.lost+
 
-
-function updateTables(data){
-
-document.getElementById("leagueTable").innerHTML=
-
-"משחקים "+data.league.played+
-
-" | ניצ "+data.league.won+
-
-" | תיקו "+data.league.draw+
-
-" | הפסד "+data.league.lost+
-
-" | נק "+data.league.points
-
-document.getElementById("champTable").innerHTML=
-
-"אליפויות "+data.champ
+"<br>נקודות: "+data.league.points
 
 }
-
-
 
 function resetGame(){
+
+if(confirm("לאפס משחק?")){
 
 localStorage.removeItem("miniFootball")
 
@@ -629,7 +524,7 @@ location.reload()
 
 }
 
-
+}
 
 loadGame()
 
