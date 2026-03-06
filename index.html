@@ -40,10 +40,11 @@ margin-top:10px;
 
 .player{
 background:#1e293b;
-padding:8px;
-border-radius:8px;
-width:150px;
+padding:10px;
+border-radius:10px;
+width:160px;
 font-size:14px;
+border:1px solid #334155;
 }
 
 button{
@@ -57,6 +58,7 @@ margin:4px;
 .green{background:#22c55e;color:white;}
 .red{background:#ef4444;color:white;}
 .blue{background:#3b82f6;color:white;}
+.orange{background:#f97316;color:white;}
 
 .section{
 background:#1e293b;
@@ -110,45 +112,41 @@ border-bottom:1px solid #334155;
 
 <div id="teamName" class="teamName"></div>
 
-<div id="players" class="players"></div>
-
 <div class="section">
 <div id="budget"></div>
 </div>
 
-<div class="section">
-
 <div class="rowButtons">
 
 <button class="blue" onclick="train('attack')">אימון התקפה</button>
-
 <button class="blue" onclick="train('defense')">אימון הגנה</button>
-
 <button class="blue" onclick="train('speed')">אימון מהירות</button>
 
 <button class="green" onclick="playMatch()">משחק שבועי</button>
 
 <button class="green" onclick="toggleMarket()">שוק שחקנים</button>
 
-<button class="green" onclick="getSponsor()">ספונסר</button>
+<button class="orange" onclick="showSponsors()">ספונסר</button>
 
 </div>
 
 <div id="matchResult"></div>
 
+<div class="section">
+<h3>שחקני הקבוצה</h3>
+<div id="players" class="players"></div>
 </div>
 
 <div class="section">
-
 <h3>טבלת ליגה</h3>
-
 <div id="league"></div>
-
 </div>
 
 <div class="section">
 
 <div id="market" style="display:none">
+
+<h3>שוק שחקנים</h3>
 
 <div id="marketPlayers" class="players"></div>
 
@@ -158,17 +156,9 @@ border-bottom:1px solid #334155;
 
 <div class="section">
 
-<h3>ספונסר</h3>
+<h3>בחירת ספונסר</h3>
 
 <div id="sponsor"></div>
-
-</div>
-
-<div class="section">
-
-<h3>גביע</h3>
-
-<div id="cup"></div>
 
 </div>
 
@@ -238,8 +228,8 @@ lost:0,
 points:0
 },
 
-sponsor:null,
-cup:0
+cup:0,
+sponsor:null
 
 }
 
@@ -261,16 +251,9 @@ document.getElementById("game").style.display="block"
 document.getElementById("teamName").innerText=data.team
 
 renderPlayers(data)
-
 renderBudget(data)
-
 renderLeague(data)
-
 renderMarket()
-
-renderSponsor(data)
-
-renderCup(data)
 
 }
 
@@ -296,16 +279,14 @@ div.innerHTML+=`
 
 <div class="player">
 
-<b>${i+1}. ${p.name}</b>
+<b>${p.name}</b>
 
 <br>
 
 ⚔️ ${starDisplay(p.stars.attack)}
-
 <br>
 
 🛡️ ${starDisplay(p.stars.defense)}
-
 <br>
 
 💨 ${starDisplay(p.stars.speed)}
@@ -323,9 +304,7 @@ div.innerHTML+=`
 }
 
 function renderBudget(data){
-
 document.getElementById("budget").innerText="תקציב: "+data.budget
-
 }
 
 function train(type){
@@ -337,10 +316,8 @@ data.players.forEach(p=>{
 p.train[type]++
 
 if(p.train[type]>=5){
-
 p.train[type]=0
 p.stars[type]++
-
 }
 
 })
@@ -362,34 +339,32 @@ let rival=rand(5)
 
 data.league.played++
 
-let resultClass=""
 let text=""
+let resultClass=""
 
 if(goals>rival){
-
 data.league.won++
 data.league.points+=3
 text="ניצחון"
 resultClass="win"
+}
 
-}else if(goals==rival){
-
+else if(goals==rival){
 data.league.draw++
 data.league.points++
 text="תיקו"
 resultClass="draw"
+}
 
-}else{
-
+else{
 data.league.lost++
 text="הפסד"
 resultClass="lose"
-
 }
 
 let bonusText=""
 
-if(data.league.played % 5 === 0){
+if(data.league.played % 5===0){
 
 let bonus=1000+rand(29000)
 
@@ -400,14 +375,14 @@ let color="bonusGreen"
 if(bonus>10000) color="bonusBlue"
 if(bonus>20000) color="bonusGold"
 
-bonusText=`<br><span class="${color}">🎁 בונוס ליגה: ${bonus}</span>`
+bonusText=`<br><span class="${color}">בונוס ליגה ${bonus}</span>`
 
 }
 
 document.getElementById("matchResult").innerHTML=
 
 `<div class="${resultClass}">
-תוצאה ${goals}-${rival}
+${goals}-${rival}
 <br>
 ${text}
 ${bonusText}
@@ -432,6 +407,7 @@ document.getElementById("league").innerHTML=
 <div class="leagueRow"><span>תיקו</span><span>${l.draw}</span></div>
 <div class="leagueRow"><span>הפסדים</span><span>${l.lost}</span></div>
 <div class="leagueRow"><span>נקודות</span><span>${l.points}</span></div>
+<div class="leagueRow"><span>גביעים</span><span>${data.cup}</span></div>
 
 `
 
@@ -453,13 +429,24 @@ div.innerHTML=""
 
 for(let i=0;i<5;i++){
 
+let player=createPlayer()
 let price=5000+rand(25000)
 
 div.innerHTML+=`
 
 <div class="player">
 
-שחקן חדש
+<b>${player.name}</b>
+
+<br>
+
+⚔️ ${starDisplay(player.stars.attack)}
+<br>
+
+🛡️ ${starDisplay(player.stars.defense)}
+<br>
+
+💨 ${starDisplay(player.stars.speed)}
 
 <br>
 
@@ -467,7 +454,7 @@ div.innerHTML+=`
 
 <br>
 
-<button class="green" onclick="buyPlayer(${price})">קנה</button>
+<button class="green" onclick='buyPlayer(${JSON.stringify(player)},${price})'>קנה</button>
 
 </div>
 
@@ -477,26 +464,21 @@ div.innerHTML+=`
 
 }
 
-function buyPlayer(price){
+function buyPlayer(player,price){
 
 let data=JSON.parse(localStorage.getItem("gogoFootball"))
 
 if(data.players.length>=15){
-
 alert("מקסימום 15 שחקנים")
-
 return
 }
 
 if(data.budget<price){
-
 alert("אין מספיק כסף")
-
 return
 }
 
-data.players.push(createPlayer())
-
+data.players.push(player)
 data.budget-=price
 
 localStorage.setItem("gogoFootball",JSON.stringify(data))
@@ -510,9 +492,7 @@ function sellPlayer(i){
 let data=JSON.parse(localStorage.getItem("gogoFootball"))
 
 if(data.players.length<=5){
-
 alert("חייבים לפחות 5 שחקנים")
-
 return
 }
 
@@ -526,35 +506,34 @@ loadGame()
 
 }
 
-function renderSponsor(data){
+function showSponsors(){
 
-if(data.sponsor){
+let div=document.getElementById("sponsor")
 
-document.getElementById("sponsor").innerText="ספונסר: "+data.sponsor
+div.innerHTML=
+
+`
+
+<button class="green" onclick="chooseSponsor('Nike',20000)">Nike 20000</button>
+
+<button class="blue" onclick="chooseSponsor('Adidas',15000)">Adidas 15000</button>
+
+<button class="orange" onclick="chooseSponsor('Samsung',25000)">Samsung 25000</button>
+
+`
 
 }
 
-}
-
-function getSponsor(){
+function chooseSponsor(name,money){
 
 let data=JSON.parse(localStorage.getItem("gogoFootball"))
 
-const list=["Nike","Adidas","Samsung","Puma","Coca Cola"]
-
-data.sponsor=list[rand(list.length)]
-
-data.budget+=20000
+data.sponsor=name
+data.budget+=money
 
 localStorage.setItem("gogoFootball",JSON.stringify(data))
 
 loadGame()
-
-}
-
-function renderCup(data){
-
-document.getElementById("cup").innerText="זכיות בגביע: "+data.cup
 
 }
 
