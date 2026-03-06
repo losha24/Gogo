@@ -65,6 +65,14 @@ border-radius:10px;
 margin-top:12px;
 }
 
+.rowButtons{
+display:flex;
+justify-content:center;
+flex-wrap:wrap;
+gap:10px;
+margin-top:10px;
+}
+
 .leagueRow{
 display:flex;
 justify-content:space-between;
@@ -76,12 +84,9 @@ border-bottom:1px solid #334155;
 .draw{color:#3b82f6;}
 .lose{color:#ef4444;}
 
-.actions{
-display:flex;
-justify-content:center;
-flex-wrap:wrap;
-gap:10px;
-}
+.bonusGreen{color:#22c55e;font-weight:bold;}
+.bonusBlue{color:#3b82f6;font-weight:bold;}
+.bonusGold{color:#facc15;font-weight:bold;}
 
 </style>
 
@@ -113,12 +118,12 @@ gap:10px;
 
 <div class="section">
 
-<h3>⚙️ פעולות קבוצה</h3>
-
-<div class="actions">
+<div class="rowButtons">
 
 <button class="blue" onclick="train('attack')">אימון התקפה</button>
+
 <button class="blue" onclick="train('defense')">אימון הגנה</button>
+
 <button class="blue" onclick="train('speed')">אימון מהירות</button>
 
 <button class="green" onclick="playMatch()">משחק שבועי</button>
@@ -143,11 +148,19 @@ gap:10px;
 
 <div class="section">
 
-<h3>שוק שחקנים</h3>
-
 <div id="market" style="display:none">
+
 <div id="marketPlayers" class="players"></div>
+
 </div>
+
+</div>
+
+<div class="section">
+
+<h3>ספונסר</h3>
+
+<div id="sponsor"></div>
 
 </div>
 
@@ -248,9 +261,15 @@ document.getElementById("game").style.display="block"
 document.getElementById("teamName").innerText=data.team
 
 renderPlayers(data)
+
 renderBudget(data)
+
 renderLeague(data)
+
 renderMarket()
+
+renderSponsor(data)
+
 renderCup(data)
 
 }
@@ -368,16 +387,20 @@ resultClass="lose"
 
 }
 
-let bonus=1000+rand(24000)
-
-data.budget+=bonus
-
 let bonusText=""
 
 if(data.league.played % 5 === 0){
 
-data.budget+=50000
-bonusText="<br>🏆 בונוס ליגה 50000"
+let bonus=1000+rand(29000)
+
+data.budget+=bonus
+
+let color="bonusGreen"
+
+if(bonus>10000) color="bonusBlue"
+if(bonus>20000) color="bonusGold"
+
+bonusText=`<br><span class="${color}">🎁 בונוס ליגה: ${bonus}</span>`
 
 }
 
@@ -387,8 +410,6 @@ document.getElementById("matchResult").innerHTML=
 תוצאה ${goals}-${rival}
 <br>
 ${text}
-<br>
-בונוס ${bonus}
 ${bonusText}
 </div>`
 
@@ -461,12 +482,16 @@ function buyPlayer(price){
 let data=JSON.parse(localStorage.getItem("gogoFootball"))
 
 if(data.players.length>=15){
+
 alert("מקסימום 15 שחקנים")
+
 return
 }
 
 if(data.budget<price){
+
 alert("אין מספיק כסף")
+
 return
 }
 
@@ -485,7 +510,9 @@ function sellPlayer(i){
 let data=JSON.parse(localStorage.getItem("gogoFootball"))
 
 if(data.players.length<=5){
+
 alert("חייבים לפחות 5 שחקנים")
+
 return
 }
 
@@ -499,9 +526,13 @@ loadGame()
 
 }
 
-function renderCup(data){
+function renderSponsor(data){
 
-document.getElementById("cup").innerText="זכיות בגביע: "+data.cup
+if(data.sponsor){
+
+document.getElementById("sponsor").innerText="ספונסר: "+data.sponsor
+
+}
 
 }
 
@@ -515,17 +546,22 @@ data.sponsor=list[rand(list.length)]
 
 data.budget+=20000
 
-alert("ספונסר חדש: "+data.sponsor)
-
 localStorage.setItem("gogoFootball",JSON.stringify(data))
 
 loadGame()
 
 }
 
+function renderCup(data){
+
+document.getElementById("cup").innerText="זכיות בגביע: "+data.cup
+
+}
+
 function resetGame(){
 
 localStorage.removeItem("gogoFootball")
+
 location.reload()
 
 }
