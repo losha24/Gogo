@@ -3,18 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>O-Kar Custom Blades | V3.2.0</title>
+    <title>O-Kar Custom Blades | V3.4.0</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="logo.png">
 </head>
-<body>
+<body onload="initApp()">
 
 <header class="main-header shadow">
     <div class="header-right" onclick="goHome()">
         <img src="logo.png" alt="Logo" class="main-logo">
     </div>
-    
     <div class="header-controls">
         <button class="nav-btn home-btn" onclick="goHome()">🏠 בית</button>
         <button id="pwaBtn" class="nav-btn pwa-status">התקנה</button>
@@ -55,10 +54,8 @@
 </div>
 
 <div id="viewModal" class="full-modal" style="display:none;">
-    <div class="full-modal-content">
-        <span class="close-view" onclick="closeView()">&times;</span>
-        <div id="modalContent"></div>
-    </div>
+    <span class="close-view" onclick="closeView()">&times;</span>
+    <div class="full-modal-content" id="modalContent"></div>
 </div>
 
 <div id="installGuide" class="modal-overlay" onclick="this.style.display='none'" style="display:none;">
@@ -69,39 +66,35 @@
     </div>
 </div>
 
-<footer>O-KAR Custom Blades | V3.2.0</footer>
+<footer>O-KAR Custom Blades | V3.4.0</footer>
 
 <script>
-    // הגדרת מפתח קבוע למניעת מחיקה בעדכונים
+    // ה"מחסן" הקבוע - לעולם לא משתנה
     const DB_NAME = 'okar_database_final';
-    const OLD_KEYS = ['okar_db_v28', 'okar_db_v29', 'okar_db_v30', 'okar_db_v31'];
+    let db = [];
 
-    // פונקציית הגירה: מושכת נתונים ישנים אם קיימים
-    function migrateData() {
-        let existingData = localStorage.getItem(DB_NAME);
-        if (!existingData) {
-            for (let key of OLD_KEYS) {
+    // פונקציית טעינה ראשונית - שולפת את הנתונים לעמוד הבית
+    function initApp() {
+        const saved = localStorage.getItem(DB_NAME);
+        if (saved) {
+            db = JSON.parse(saved);
+        } else {
+            // הגירה מגרסאות ישנות אם קיימות
+            const oldKeys = ['okar_db_v30', 'okar_db_v31', 'okar_db_v32', 'okar_db_v33'];
+            for (let key of oldKeys) {
                 let oldData = localStorage.getItem(key);
                 if (oldData) {
-                    localStorage.setItem(DB_NAME, oldData);
-                    console.log("Migrated data from: " + key);
+                    db = JSON.parse(oldData);
+                    updateDB(); // שומר למחסן החדש
                     break;
                 }
             }
         }
+        render();
     }
 
-    migrateData();
-
-    let db = JSON.parse(localStorage.getItem(DB_NAME)) || [];
     let deferredPrompt;
-
-    // לוגיקת התקנה
     const pwaBtn = document.getElementById('pwaBtn');
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-        pwaBtn.style.backgroundColor = "var(--accent)"; 
-        pwaBtn.innerText = "מותקן ✅";
-    }
 
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
@@ -112,8 +105,6 @@
     pwaBtn.addEventListener('click', async () => {
         if (deferredPrompt) {
             deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') pwaBtn.style.backgroundColor = "var(--accent)";
             deferredPrompt = null;
         } else {
             document.getElementById('installGuide').style.display = 'flex';
@@ -123,15 +114,14 @@
     function goHome() {
         document.getElementById('formModal').style.display = 'none';
         document.getElementById('viewModal').style.display = 'none';
-        document.body.style.overflow = "auto";
-        window.scrollTo({top: 0, behavior: 'smooth'});
+        document.body.classList.remove('no-scroll');
     }
 
     function toggleForm() {
         resetForm();
         document.getElementById('deleteBtn').style.display = 'none';
         document.getElementById('formModal').style.display = 'block';
-        document.body.style.overflow = "hidden";
+        document.body.classList.add('no-scroll');
     }
 
     function save() {
@@ -150,8 +140,12 @@
                 images: imgs.length ? imgs : (id ? db.find(x=>x.id==id).images : ["https://via.placeholder.com/400?text=O-KAR"]),
                 sold: id ? db.find(x=>x.id==id).sold : false
             };
-            if(id) db[db.findIndex(x=>x.id==id)] = item;
-            else db.unshift(item);
+            if(id) {
+                const idx = db.findIndex(x=>x.id==id);
+                db[idx] = item;
+            } else {
+                db.unshift(item);
+            }
             updateDB(); goHome();
         };
 
@@ -163,8 +157,8 @@
     }
 
     function deleteProduct() {
-        const id = document.getElementById('editId').value;
         if(confirm("למחוק את המוצר?")) {
+            const id = document.getElementById('editId').value;
             db = db.filter(x => x.id != id);
             updateDB(); goHome();
         }
@@ -173,17 +167,17 @@
     function render() {
         const listDiv = document.getElementById('list');
         if(db.length === 0) {
-            listDiv.innerHTML = '<p style="grid-column:1/-1; text-align:center; padding:40px; color:#aaa;">אין מוצרים במאגר. לחץ על הוספה.</p>';
+            listDiv.innerHTML = '<p style="grid-column:1/-1; text-align:center; padding:40px; color:#aaa;">המאגר ריק. הוסף מוצר חדש.</p>';
             return;
         }
         listDiv.innerHTML = db.map(i => `
             <div class="item-card shadow ${i.sold ? 'is-sold' : ''}">
-                <div class="card-img" onclick="viewItem(${i.id})"><img src="${i.images[0]}"></div>
+                <div class="card-img" onclick="viewItem(${i.id})"><img src="${i.images[0]}" loading="lazy"></div>
                 <div class="item-info">
                     <div class="title">${i.n}</div>
                     <div class="price">₪${i.p}</div>
                     <div class="item-btns">
-                        <button class="btn-i wa" onclick="shareWA('${i.n}', '${i.p}')">🔗</button>
+                        <button class="btn-i wa" onclick="shareWA('${i.n.replace(/'/g, "\\'")}', '${i.p}')">🔗</button>
                         <button class="btn-i ed" onclick="editItem(${i.id})">✏️</button>
                         <button class="btn-i st" onclick="toggleSold(${i.id})">${i.sold ? '🛒' : '✅'}</button>
                     </div>
@@ -194,17 +188,21 @@
 
     function viewItem(id) {
         const i = db.find(x => x.id == id);
+        if(!i) return;
         document.getElementById('modalContent').innerHTML = `
             <div class="m-slider">${i.images.map(s => `<img src="${s}">`).join('')}</div>
             <div class="m-details">
                 <h2>${i.n}</h2>
                 <p class="m-price">₪${i.p}</p>
-                <div class="m-specs"><p><strong>חומרים:</strong> ${i.m || '-'}</p><p>${i.d || '-'}</p></div>
-                <button class="btn-wa-big shadow" onclick="shareWA('${i.n}', '${i.p}')">שתף מוצר בוואצאפ 📱</button>
+                <div class="m-specs">
+                    <p><strong>חומרים:</strong> ${i.m || '-'}</p>
+                    <p>${i.d || '-'}</p>
+                </div>
+                <button class="btn-wa-big shadow" onclick="shareWA('${i.n.replace(/'/g, "\\'")}', '${i.p}')">שלח התעניינות בוואצאפ</button>
             </div>
         `;
         document.getElementById('viewModal').style.display = "block";
-        document.body.style.overflow = "hidden";
+        document.body.classList.add('no-scroll');
     }
 
     function editItem(id) {
@@ -217,6 +215,7 @@
         document.getElementById('formTitle').innerText = "עריכת מוצר";
         document.getElementById('deleteBtn').style.display = 'block';
         document.getElementById('formModal').style.display = 'block';
+        document.body.classList.add('no-scroll');
     }
 
     function toggleSold(id) {
@@ -226,12 +225,14 @@
     }
 
     function shareWA(name, price) {
-        const text = `היי, ראיתי את המוצר "${name}" במחיר ${price} ש"ח באפליקציית O-KAR, אשמח לפרטים!`;
+        const text = `היי, אני מעוניין במוצר: ${name} (מחיר: ${price} ₪)`;
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     }
 
+    function closeView() { goHome(); }
     function updateDB() { localStorage.setItem(DB_NAME, JSON.stringify(db)); render(); }
     function resetForm() { ['editId','name','mat','price','desc','imgs'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value = ''; }); }
+    
     function exportData() {
         const a = document.createElement('a');
         a.href = URL.createObjectURL(new Blob([JSON.stringify(db)], {type: "application/json"}));
@@ -242,7 +243,6 @@
         r.onload = ev => { db = JSON.parse(ev.target.result); updateDB(); };
         r.readAsText(e.target.files[0]);
     }
-    render();
 </script>
 </body>
 </html>
