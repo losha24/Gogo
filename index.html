@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>O-Kar Pro | V2.5.0</title>
+    <title>O-Kar Pro</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="logo.png">
@@ -12,42 +12,40 @@
 
 <header class="main-header shadow">
     <div class="header-right">
-        <img src="logo.png" alt="O-Kar" class="main-logo">
-        <span class="brand-name">O-KAR</span>
+        <img src="logo.png" alt="Logo" class="main-logo">
     </div>
+    
     <div class="header-controls">
-        <button class="ctrl-btn main-add" onclick="toggleForm()">➕</button>
-        <button class="ctrl-btn" onclick="exportData()">📤</button>
-        <label class="ctrl-btn">📥<input type="file" id="fileIn" accept=".json" onchange="importData(event)" style="display:none;"></label>
-        <button class="ctrl-btn" onclick="location.reload(true)">🔄</button>
+        <button id="pwaBtn" class="nav-btn pwa-off">התקנה</button>
+        <button class="nav-btn" onclick="location.reload(true)">רענון</button>
+        <button class="nav-btn" onclick="exportData()">גיבוי</button>
+        <label class="nav-btn">שחזור<input type="file" id="fileIn" accept=".json" onchange="importData(event)" style="display:none;"></label>
+        <button class="add-btn-round" onclick="toggleForm()">+</button>
     </div>
 </header>
 
 <div class="container">
-    <div id="installContainer" style="display:none;">
-        <button id="installBtn" class="btn-install-promo shadow">📲 התקן את האפליקציה</button>
-    </div>
-
     <div class="card-add shadow" id="formContainer" style="display:none;">
         <div class="form-header">
-            <h3 id="formTitle">פריט חדש</h3>
-            <button class="close-btn" onclick="toggleForm()">✖</button>
+            <h3 id="formTitle">הוספת מוצר</h3>
+            <button class="close-btn" onclick="toggleForm()">✕</button>
         </div>
         <input type="hidden" id="editId">
         <input type="text" id="name" placeholder="שם הדגם">
         <select id="category" class="input-style">
             <option value="שטח">סכיני שטח</option>
             <option value="מטבח">סכיני מטבח</option>
-            <option value="אספנות">פריטי אספנות</option>
+            <option value="אספנות">אספנות</option>
             <option value="נדנים">נדנים</option>
         </select>
-        <input type="text" id="mat" placeholder="חומרים">
+        <input type="text" id="mat" placeholder="חומרים (פלדה/ידית)">
         <input type="number" id="price" placeholder="מחיר (₪)">
-        <textarea id="desc" rows="2" placeholder="תיאור..."></textarea>
-        <div id="imgSection">
+        <textarea id="desc" rows="2" placeholder="תיאור נוסף..."></textarea>
+        <div class="file-upload">
+            <label for="imgs">📸 בחר תמונות</label>
             <input type="file" id="imgs" multiple accept="image/*">
         </div>
-        <button class="btn-black" id="saveBtn" onclick="save()">שמור שינויים</button>
+        <button class="btn-save" id="saveBtn" onclick="save()">שמור מוצר</button>
     </div>
 
     <div class="filter-bar">
@@ -59,82 +57,91 @@
     <div id="list" class="grid-container"></div>
 </div>
 
-<div id="viewModal" class="modal">
+<div id="viewModal" class="modal" onclick="if(event.target==this)closeView()">
     <div class="modal-content">
         <span class="close-modal" onclick="closeView()">&times;</span>
         <div id="modalContent"></div>
     </div>
 </div>
 
-<footer>O-KAR Professional | V2.5.0</footer>
+<footer>O-KAR Custom Blades | V2.6.0</footer>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('okar_db_v25')) || [];
+    const STORAGE_KEY = 'okar_db_v26';
+    const demoData = [
+        { id: 1, n: "סכין שטח 'ערבה'", p: "1200", c: "שטח", m: "פלדת D2", d: "עבודת יד", images: ["https://images.unsplash.com/photo-1574359411659-15573a27f812?w=400"], sold: false },
+        { id: 2, n: "סכין שף סנטוקו", p: "850", c: "מטבח", m: "פלדת פחמן", d: "ידית עץ זית", images: ["https://images.unsplash.com/photo-1593414220166-085ca802cc41?w=400"], sold: true }
+    ];
+
+    let db = JSON.parse(localStorage.getItem(STORAGE_KEY)) || demoData;
     let currentFilter = 'all';
+    let deferredPrompt;
+
+    // PWA Logic
+    const pwaBtn = document.getElementById('pwaBtn');
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        pwaBtn.classList.replace('pwa-off', 'pwa-on');
+    });
+
+    pwaBtn.addEventListener('click', async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') pwaBtn.classList.replace('pwa-on', 'pwa-off');
+            deferredPrompt = null;
+        } else {
+            alert("האפליקציה כבר מותקנת או שהדפדפן אינו תומך");
+        }
+    });
 
     function toggleForm() {
         const f = document.getElementById('formContainer');
         f.style.display = f.style.display === 'none' ? 'block' : 'none';
-        if(f.style.display === 'block') window.scrollTo(0,0);
     }
 
     function save() {
         const id = document.getElementById('editId').value;
         const n = document.getElementById('name').value;
         const p = document.getElementById('price').value;
-        if(!n || !p) return alert("חובה שם ומחיר");
+        if(!n || !p) return alert("מלא שם ומחיר");
 
-        const data = {
-            id: id ? Number(id) : Date.now(),
-            n, p, 
-            c: document.getElementById('category').value,
-            m: document.getElementById('mat').value,
-            d: document.getElementById('desc').value,
-            sold: false
+        const files = document.getElementById('imgs').files;
+        const process = (imgs) => {
+            const item = {
+                id: id ? Number(id) : Date.now(),
+                n, p, c: document.getElementById('category').value,
+                m: document.getElementById('mat').value,
+                d: document.getElementById('desc').value,
+                images: imgs.length ? imgs : (id ? db.find(x=>x.id==id).images : ["https://via.placeholder.com/300"]),
+                sold: id ? db.find(x=>x.id==id).sold : false
+            };
+            if(id) db[db.findIndex(x=>x.id==id)] = item;
+            else db.unshift(item);
+            updateDB(); resetForm(); toggleForm();
         };
 
-        const f = document.getElementById('imgs').files;
-        if (f.length > 0) {
-            const readers = Array.from(f).map(file => new Promise(res => {
-                const r = new FileReader();
-                r.onload = e => res(e.target.result);
-                r.readAsDataURL(file);
-            }));
-            Promise.all(readers).then(images => {
-                data.images = images;
-                finalizeSave(data, id);
-            });
-        } else {
-            const existing = db.find(x => x.id == id);
-            data.images = existing ? existing.images : ["https://via.placeholder.com/300"];
-            finalizeSave(data, id);
-        }
-    }
-
-    function finalizeSave(data, id) {
-        if(id) {
-            const idx = db.findIndex(x => x.id == id);
-            db[idx] = {...db[idx], ...data};
-        } else {
-            db.unshift(data);
-        }
-        updateDB(); resetForm(); toggleForm();
+        if(files.length) {
+            Promise.all(Array.from(files).map(f => new Promise(res => {
+                const r = new FileReader(); r.onload = e => res(e.target.result); r.readAsDataURL(f);
+            }))).then(process);
+        } else process([]);
     }
 
     function render() {
         const listDiv = document.getElementById('list');
         const filtered = db.filter(i => currentFilter === 'all' || (currentFilter === 'available' ? !i.sold : i.sold));
-
         listDiv.innerHTML = filtered.map(i => `
             <div class="item-card shadow ${i.sold ? 'is-sold' : ''}">
-                <div class="slider" onclick="viewItem(${i.id})">${i.images.map(s => `<img src="${s}">`).join('')}</div>
-                <div class="item-body">
-                    <div class="item-title">${i.n}</div>
+                <div class="card-img" onclick="viewItem(${i.id})"><img src="${i.images[0]}"></div>
+                <div class="item-info">
+                    <div class="title">${i.n}</div>
                     <div class="price">₪${i.p}</div>
-                    <div class="action-grid">
-                        <button class="btn-action btn-wa" onclick="shareWA('${i.n}', '${i.p}')">🔗</button>
-                        <button class="btn-action btn-edit" onclick="editItem(${i.id})">✏️</button>
-                        <button class="btn-action btn-status" onclick="toggleSold(${i.id})">${i.sold ? '🛒' : '✅'}</button>
+                    <div class="item-btns">
+                        <button class="btn-i wa" onclick="shareWA('${i.n}', '${i.p}')">🔗</button>
+                        <button class="btn-i ed" onclick="editItem(${i.id})">✏️</button>
+                        <button class="btn-i st" onclick="toggleSold(${i.id})">${i.sold ? '🛒' : '✅'}</button>
                     </div>
                 </div>
             </div>
@@ -144,18 +151,16 @@
     function viewItem(id) {
         const i = db.find(x => x.id == id);
         document.getElementById('modalContent').innerHTML = `
-            <div class="modal-slider">${i.images.map(s => `<img src="${s}">`).join('')}</div>
+            <div class="m-slider">${i.images.map(s => `<img src="${s}">`).join('')}</div>
             <h2>${i.n}</h2>
-            <p class="modal-price">₪${i.p}</p>
+            <p class="m-price">₪${i.p}</p>
             <p><strong>חומרים:</strong> ${i.m}</p>
-            <p><strong>תיאור:</strong> ${i.d}</p>
-            <button class="btn-black" onclick="shareWA('${i.n}', '${i.p}')">שתף בוואצאפ</button>
+            <p>${i.d}</p>
         `;
         document.getElementById('viewModal').style.display = "block";
     }
 
     function closeView() { document.getElementById('viewModal').style.display = "none"; }
-
     function editItem(id) {
         const i = db.find(x => x.id == id);
         document.getElementById('editId').value = i.id;
@@ -166,27 +171,20 @@
         document.getElementById('formTitle').innerText = "עריכת מוצר";
         toggleForm();
     }
-
-    function toggleSold(id) {
-        const idx = db.findIndex(x => x.id == id);
-        db[idx].sold = !db[idx].sold;
-        updateDB();
+    function toggleSold(id) { db[db.findIndex(x=>x.id==id)].sold = !db[db.findIndex(x=>x.id==id)].sold; updateDB(); }
+    function shareWA(n, p) { window.open(`https://wa.me/?text=${encodeURIComponent('היי, אשמח לפרטים על ' + n + ' ב-₪' + p)}`); }
+    function updateDB() { localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); render(); }
+    function resetForm() { ['editId','name','mat','price','desc','imgs'].forEach(id => document.getElementById(id).value = ''); }
+    function filterItems(t) { currentFilter = t; document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.onclick.toString().includes(t))); render(); }
+    function exportData() {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([JSON.stringify(db)], {type: "application/json"}));
+        a.download = "okar_backup.json"; a.click();
     }
-
-    function shareWA(n, p) {
-        const text = `היי, אני מעוניין במוצר: ${n}\nמחיר: ₪${p}\nפרטים נוספים כאן!`;
-        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
-    }
-
-    function updateDB() { localStorage.setItem('okar_db_v25', JSON.stringify(db)); render(); }
-    function resetForm() {
-        ['editId','name','mat','price','desc','imgs'].forEach(id => document.getElementById(id).value = '');
-        document.getElementById('formTitle').innerText = "פריט חדש";
-    }
-    function filterItems(t) {
-        currentFilter = t;
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.innerText.includes(t === 'all' ? 'הכל' : t === 'available' ? 'זמין' : 'נמכר')));
-        render();
+    function importData(e) {
+        const r = new FileReader();
+        r.onload = ev => { db = JSON.parse(ev.target.result); updateDB(); };
+        r.readAsText(e.target.files[0]);
     }
     render();
 </script>
