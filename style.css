@@ -1,9 +1,10 @@
 :root {
     --bg: #ffffff;
-    --accent: #e63946;
+    --accent: #e63946; /* אדום למותקן / מחיר */
     --dark: #121212;
     --yellow: #ffcc00;
-    --gray: #f2f2f2;
+    --blue: #007bff; /* כחול להתקנה */
+    --gray: #f5f5f5;
 }
 
 html, body { max-width: 100%; overflow-x: hidden; margin: 0; padding: 0; background: #fafafa; font-family: -apple-system, sans-serif; direction: rtl; }
@@ -17,9 +18,12 @@ body { padding-top: 80px; }
     border-bottom: 2px solid #eee;
 }
 .main-logo { height: 45px; cursor: pointer; }
-.header-controls { display: flex; gap: 4px; }
+.header-controls { display: flex; gap: 5px; }
 .nav-btn { background: #eee; border: none; padding: 8px 10px; border-radius: 8px; font-weight: bold; font-size: 0.75rem; cursor: pointer; }
 .home-btn { background: var(--dark); color: white; }
+
+/* כפתור התקנה צבעוני */
+.pwa-status { background: var(--blue); color: white; transition: 0.3s; }
 
 /* כפתור הוספה */
 .big-add-btn {
@@ -30,7 +34,7 @@ body { padding-top: 80px; }
 
 .container { padding: 15px; width: 100%; box-sizing: border-box; }
 
-/* מודלים */
+/* מודלים מלאים */
 .full-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; overflow-y: auto; }
 .form-header-bar { padding: 15px; border-bottom: 1px solid #eee; display: flex; align-items: center; background: #fff; position: sticky; top:0; }
 .back-btn { background: #f0f0f0; border: none; padding: 8px 15px; border-radius: 10px; font-weight: bold; margin-left: 10px; }
@@ -38,19 +42,20 @@ body { padding-top: 80px; }
 .form-body { padding: 20px; }
 .input-group { margin-bottom: 15px; }
 .input-group label { display: block; font-weight: bold; font-size: 0.8rem; color: #666; margin-bottom: 4px; }
-.input-row { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
-
 input, select, textarea { width: 100%; padding: 14px; border: 1px solid #eee; background: var(--gray); border-radius: 12px; font-size: 1rem; box-sizing: border-box; }
 
 .file-area { background: #fffde7; border: 2px dashed #fbc02d; padding: 15px; border-radius: 15px; text-align: center; margin-bottom: 15px; }
 .btn-save-final { background: var(--dark); color: white; width: 100%; padding: 18px; border-radius: 15px; border: none; font-size: 1.1rem; font-weight: bold; }
-.btn-delete { background: #fff0f0; color: #d32f2f; width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #ffcdd2; margin-top: 15px; font-weight: bold; cursor: pointer; }
+.btn-delete { background: #fff0f0; color: #d32f2f; width: 100%; padding: 12px; border-radius: 12px; border: none; margin-top: 15px; font-weight: bold; }
+
+/* כפתור וואצאפ גדול */
+.btn-wa-big { background: #25d366; color: white; width: 100%; padding: 18px; border-radius: 15px; border: none; font-size: 1.1rem; font-weight: bold; margin-top: 10px; cursor: pointer; }
 
 /* גריד מוצרים */
 .grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .item-card { background: white; border-radius: 18px; overflow: hidden; border: 1px solid #eee; }
 .card-img { height: 150px; overflow: hidden; background: #f9f9f9; }
-.card-img img { width: 100%; height: 100%; object-fit: cover; transition: 0.3s; }
+.card-img img { width: 100%; height: 100%; object-fit: cover; }
 .item-card.is-sold { opacity: 0.4; filter: grayscale(1); }
 
 .item-info { padding: 10px; text-align: center; }
@@ -59,19 +64,15 @@ input, select, textarea { width: 100%; padding: 14px; border: 1px solid #eee; ba
 
 .item-btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; }
 .btn-i { border: none; padding: 10px 0; border-radius: 8px; font-size: 1.1rem; background: var(--gray); cursor: pointer; }
+.wa { background: #e8f5e9; }
 
 /* צפייה במוצר */
-.m-slider { width: 100%; height: 40vh; display: flex; overflow-x: auto; background: #000; scroll-snap-type: x mandatory; }
-.m-slider img { min-width: 100%; object-fit: contain; scroll-snap-align: start; }
+.m-slider { width: 100%; height: 40vh; display: flex; overflow-x: auto; background: #000; }
+.m-slider img { min-width: 100%; object-fit: contain; }
 .m-details { padding: 20px; }
-.m-tag { background: #eee; padding: 4px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; }
 .m-price { font-size: 2rem; font-weight: 900; color: var(--accent); margin: 5px 0; }
-.m-specs { background: #fdfdfd; padding: 15px; border-radius: 12px; border: 1px solid #eee; margin: 15px 0; font-size: 0.95rem; }
+.m-specs { background: #fdfdfd; padding: 15px; border-radius: 12px; border: 1px solid #eee; margin: 15px 0; font-size: 0.95rem; line-height: 1.6; }
 .close-view { position: absolute; left: 15px; top: 15px; font-size: 2.5rem; color: white; text-shadow: 0 0 10px rgba(0,0,0,0.5); z-index: 2200; cursor: pointer; }
-
-.filter-bar { display: flex; gap: 6px; margin-bottom: 20px; overflow-x: auto; padding: 4px 0; }
-.filter-btn { padding: 8px 16px; border-radius: 20px; border: 1px solid #eee; background: white; font-size: 0.8rem; white-space: nowrap; }
-.filter-btn.active { background: var(--dark); color: white; border-color: var(--dark); }
 
 .shadow { box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
 footer { text-align: center; padding: 40px; color: #ccc; font-size: 0.7rem; }
