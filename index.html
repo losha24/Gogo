@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>O-Kar Pro | Premium Management</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="logo.png">
+    <meta name="theme-color" content="#ffffff">
+</head>
+<body>
+
+<div id="updatePop" class="banner" onclick="location.reload(true)">✨ גרסה 2.2.0 זמינה - לחץ לרענון ✨</div>
+
+<header>
+    <img src="logo.png" alt="O-Kar Logo" style="height: 60px; margin-bottom: 10px;">
+    <div class="logo-box">O-KAR</div>
+    <div class="ver-tag">PROFESSIONAL ARMORY | V2.2.0</div>
+</header>
+
+<div class="container">
+    <div class="system-nav">
+        <button class="btn-sys shadow-sm" onclick="exportData()">📤 גיבוי</button>
+        <button class="btn-sys shadow-sm" style="position:relative;">
+            📥 שחזור
+            <input type="file" id="fileIn" accept=".json" onchange="importData(event)">
+        </button>
+    </div>
+
+    <div class="card-add shadow" id="formContainer">
+        <h3 id="formTitle">הוספת פריט חדש</h3>
+        <input type="hidden" id="editId">
+        <input type="text" id="name" placeholder="שם הדגם">
+        
+        <select id="category" class="input-style">
+            <option value="שטח">סכיני שטח</option>
+            <option value="מטבח">סכיני מטבח</option>
+            <option value="אספנות">פריטי אספנות</option>
+            <option value="נדנים">נדנים ואביזרים</option>
+        </select>
+
+        <input type="text" id="mat" placeholder="סוג פלדה וידית">
+        <input type="number" id="price" placeholder="מחיר (₪)">
+        <textarea id="desc" rows="2" placeholder="תיאור העבודה..."></textarea>
+        
+        <div id="imgSection">
+            <label class="file-label">בחר תמונות מהגלריה:</label>
+            <input type="file" id="imgs" multiple accept="image/*">
+        </div>
+
+        <button class="btn-black" id="saveBtn" onclick="save()">שמור ב-O-Kar</button>
+        <button class="btn-cancel" id="cancelBtn" onclick="resetForm()" style="display:none;">ביטול עריכה</button>
+    </div>
+
+    <div class="filter-bar">
+        <button onclick="filterItems('all')" class="filter-btn active">הכל</button>
+        <button onclick="filterItems('available')" class="filter-btn">זמין</button>
+        <button onclick="filterItems('sold')" class="filter-btn">נמכר</button>
+    </div>
+
+    <div id="list" class="grid-container"></div>
+</div>
+
+<footer>
+    © 2026 O-KAR - Alexei Zavodisker | V2.2.0
+</footer>
+
+<script>
+    const VERSION = "2.2.0";
+    let db = JSON.parse(localStorage.getItem('okar_db_v22')) || [];
+    let currentFilter = 'all';
+
+    // רישום Service Worker לעבודה אופליין
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').catch(err => console.log("SW error", err));
+    }
+
+    function save() {
+        const id = document.getElementById('editId').value;
+        const n = document.getElementById('name').value;
+        const p = document.getElementById('price').value;
+        const c = document.getElementById('category').value;
+        const f = document.getElementById('imgs').files;
+
+        if(!n || !p) return alert("חובה שם ומחיר");
+
+        if (id) {
+            const index = db.findIndex(x => x.id == id);
+            db[index].n = n; db[index].p = p; db[index].c = c;
+            db[index].m = document.getElementById('mat').value;
+            db[index].d = document.getElementById('desc').value;
+            updateDB(); resetForm();
+        } else {
+            const readers = Array.from(f).map(file => new Promise(res => {
+                const r = new FileReader();
+                r.onload = e => res(e.target.result);
+                r.readAsDataURL(file);
+            }));
+            Promise.all(readers).then(images => {
+                db.unshift({ id: Date.now(), n, p, c, m: document.getElementById('mat').value, d: document.getElementById('desc').value, images, sold: false });
+                updateDB(); resetForm();
+            });
+        }
+    }
+
+    function render() {
+        const listDiv = document.getElementById('list');
+        let filtered = db;
+        if(currentFilter === 'available') filtered = db.filter(x => !x.sold);
+        if(currentFilter === 'sold') filtered = db.filter(x => x.sold);
+
+        listDiv.innerHTML = filtered.map(i => `
+            <div class="item-card shadow ${i.sold ? 'is-sold' : ''}">
+                <div class="slider">${i.images.map(s => `<img src="${s}">`).join('') || '<div class="no-img">אין תמונות</div>'}</div>
+                <div class="item-body">
+                    <div class="tag">${i.c}</div>
+                    <div class="item-head"><b>${i.n}</b></div>
+                    <div class="price">₪${i.p}</div>
+                    <p class="details">${i.m}</p>
+                    <div class="action-grid">
+                        <button class="btn-wa" onclick="shareWA('${i.n}', '${i.p}')">WA</button>
+                        <button class="btn-edit" onclick="editItem(${i.id})">ערוך</button>
+                        <button class="btn-status" onclick="toggleSold(${i.id})">${i.sold ? 'מלאי' : 'נמכר'}</button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function editItem(id) {
+        const item = db.find(x => x.id == id);
+        document.getElementById('editId').value = item.id;
+        document.getElementById('name').value = item.n;
+        document.getElementById('price').value = item.p;
+        document.getElementById('category').value = item.c;
+        document.getElementById('mat').value = item.m;
+        document.getElementById('desc').value = item.d;
+        document.getElementById('formTitle').innerText = "עריכת פריט";
+        document.getElementById('saveBtn').innerText = "עדכן";
+        document.getElementById('cancelBtn').style.display = "block";
+        document.getElementById('imgSection').style.display = "none";
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+
+    function toggleSold(id) {
+        const index = db.findIndex(x => x.id == id);
+        db[index].sold = !db[index].sold;
+        updateDB();
+    }
+
+    function filterItems(type) {
+        currentFilter = type;
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+        render();
+    }
+
+    function shareWA(n, p) {
+        window.open(`https://wa.me/?text=${encodeURIComponent('*O-Kar*\nדגם: ' + n + '\nמחיר: ' + p + '₪')}`);
+    }
+
+    function updateDB() { localStorage.setItem('okar_db_v22', JSON.stringify(db)); render(); }
+    function resetForm() {
+        ['editId','name','mat','price','desc','imgs'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('formTitle').innerText = "הוספת פריט חדש";
+        document.getElementById('saveBtn').innerText = "שמור ב-O-Kar";
+        document.getElementById('cancelBtn').style.display = "none";
+        document.getElementById('imgSection').style.display = "block";
+    }
+    function exportData() {
+        const blob = new Blob([JSON.stringify(db)], {type: "application/json"});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `okar_backup.json`;
+        a.click();
+    }
+    function importData(e) {
+        const f = e.target.files[0];
+        if(!f) return;
+        const r = new FileReader();
+        r.onload = ev => { try { db = JSON.parse(ev.target.result); updateDB(); } catch(e) { alert("טעות"); } };
+        r.readAsText(f);
+    }
+    render();
+</script>
+</body>
+</html>
