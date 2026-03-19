@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>O-Kar Custom Blades | V3.8.0</title>
+    <title>O-Kar Custom Blades | V3.9.0</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="logo.png">
@@ -11,8 +11,8 @@
 <body onload="initApp()">
 
 <header class="main-header shadow">
-    <div class="header-right" onclick="goHome()">
-        <img src="logo.png" alt="Logo" class="main-logo">
+    <div class="header-top">
+        <img src="logo.png" alt="O-Kar Logo" class="main-logo-large" onclick="goHome()">
     </div>
     <div class="header-controls">
         <button class="nav-btn home-btn" onclick="goHome()">🏠 בית</button>
@@ -39,7 +39,7 @@
                 <div class="input-group"><label>שם הדגם</label><input type="text" id="name" placeholder="שם הסכין"></div>
                 <div class="input-group"><label>מחיר (₪)</label><input type="number" id="price" placeholder="מחיר בשקלים"></div>
                 <div class="input-group"><label>חומרים</label><input type="text" id="mat" placeholder="סוג פלדה וידית"></div>
-                <div class="input-group"><label>תיאור</label><textarea id="desc" rows="3" placeholder="תיאור חופשי..."></textarea></div>
+                <div class="input-group"><label>תיאור</label><textarea id="desc" rows="3" placeholder="פירוט נוסף..."></textarea></div>
                 
                 <div class="file-area shadow">
                     <p>📸 בחירת תמונות (ללא הגבלה)</p>
@@ -47,7 +47,7 @@
                 </div>
 
                 <button id="saveBtn" class="btn-save-final shadow" onclick="save()">שמור ופרסם</button>
-                <button id="deleteBtn" class="btn-delete" style="display:none;" onclick="deleteProduct()">🗑️ מחק מוצר מהמערכת</button>
+                <button id="deleteBtn" class="btn-delete" style="display:none;" onclick="deleteProduct()">🗑️ מחק מוצר</button>
             </div>
         </div>
     </div>
@@ -68,7 +68,7 @@
     </div>
 </div>
 
-<footer>O-KAR Custom Blades | V3.8.0</footer>
+<footer>O-KAR Custom Blades | V3.9.0</footer>
 
 <script>
     const DB_NAME = 'okar_database_final';
@@ -87,7 +87,8 @@
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            pwaBtn.classList.add('ready');
+            pwaBtn.style.backgroundColor = "#007bff";
+            pwaBtn.style.color = "white";
         });
     }
 
@@ -104,16 +105,15 @@
         const n = document.getElementById('name').value;
         const p = document.getElementById('price').value;
         const id = document.getElementById('editId').value;
-        if(!n || !p) return alert("חובה למלא שם ומחיר");
+        if(!n || !p) return alert("שם ומחיר חובה!");
 
         const btn = document.getElementById('saveBtn');
         btn.disabled = true;
-        btn.innerText = "שומר... (מעבד תמונות)";
+        btn.innerText = "שומר...";
 
         const files = Array.from(document.getElementById('imgs').files);
         let images = [];
 
-        // מהירות: עיבוד תמונות מקבילי
         if (files.length > 0) {
             images = await Promise.all(files.map(f => new Promise((res) => {
                 const r = new FileReader();
@@ -169,7 +169,7 @@
                 <h2>${i.n}</h2>
                 <p class="m-price">₪${i.p}</p>
                 <div class="m-specs shadow"><p><strong>חומרים:</strong> ${i.m || '-'}</p><p>${i.d || '-'}</p></div>
-                <button class="btn-wa-big shadow" onclick="shareWA('${i.n.replace(/'/g, "\\'")}', '${i.p}')">הזמנה מהירה בוואצאפ</button>
+                <button class="btn-wa-big shadow" onclick="shareWA('${i.n.replace(/'/g, "\\'")}', '${i.p}')">הזמנה בוואצאפ</button>
             </div>
         `;
         document.getElementById('viewModal').style.display = "block";
@@ -201,7 +201,6 @@
 
     function updateDB() { localStorage.setItem(DB_NAME, JSON.stringify(db)); render(); }
     function goHome() { document.querySelectorAll('.full-modal').forEach(m => m.style.display = 'none'); document.body.classList.remove('no-scroll'); }
-    function closeView() { goHome(); }
     function toggleForm() { resetForm(); document.getElementById('deleteBtn').style.display = 'none'; document.getElementById('formModal').style.display = 'block'; document.body.classList.add('no-scroll'); }
     function resetForm() { ['editId','name','mat','price','desc','imgs'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value = ''; }); document.getElementById('formTitle').innerText = "פרטי מוצר"; }
     function exportData() {
@@ -214,6 +213,7 @@
         r.onload = ev => { db = JSON.parse(ev.target.result); updateDB(); };
         r.readAsText(e.target.files[0]);
     }
+    function closeView() { goHome(); }
 </script>
 </body>
 </html>
