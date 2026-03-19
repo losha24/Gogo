@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>O-Kar Pro | V2.7.0</title>
+    <title>O-Kar Pro | V2.9.0</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="logo.png">
@@ -11,8 +11,8 @@
 <body>
 
 <header class="main-header shadow">
-    <div class="header-right">
-        <img src="logo.png" alt="Logo" class="main-logo" onclick="goHome()">
+    <div class="header-right" onclick="goHome()">
+        <img src="logo.png" alt="Logo" class="main-logo">
     </div>
     
     <div class="header-controls">
@@ -29,114 +29,161 @@
         <span>➕</span> הוספת מוצר חדש
     </button>
 
-    <div class="card-add shadow" id="formContainer" style="display:none;">
-        <div class="form-header">
-            <h3 id="formTitle">הוספת מוצר</h3>
-            <button class="close-btn" onclick="toggleForm()">✕</button>
+    <div id="formModal" class="full-modal" style="display:none;">
+        <div class="full-modal-content">
+            <div class="form-header-bar">
+                <button class="back-btn" onclick="goHome()">➜ חזרה</button>
+                <h2 id="formTitle">הוספת מוצר</h2>
+            </div>
+            
+            <div class="form-body">
+                <input type="hidden" id="editId">
+                
+                <div class="input-group">
+                    <label>שם הדגם</label>
+                    <input type="text" id="name" placeholder="לדוגמה: סכין בואי">
+                </div>
+
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>קטגוריה</label>
+                        <select id="category">
+                            <option value="שטח">סכיני שטח</option>
+                            <option value="מטבח">סכיני מטבח</option>
+                            <option value="אספנות">אספנות</option>
+                            <option value="נדנים">נדנים</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>מחיר (₪)</label>
+                        <input type="number" id="price" placeholder="0">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>חומרים (פלדה/ידית)</label>
+                    <input type="text" id="mat" placeholder="למשל: פלדת פחמן, ידית מיקרטה">
+                </div>
+
+                <div class="input-group">
+                    <label>תיאור</label>
+                    <textarea id="desc" rows="3" placeholder="תיאור העבודה..."></textarea>
+                </div>
+
+                <div class="file-area">
+                    <p>📸 הוסף תמונות</p>
+                    <input type="file" id="imgs" multiple accept="image/*">
+                </div>
+
+                <button class="btn-save-final shadow" id="saveBtn" onclick="save()">שמור מוצר</button>
+                
+                <button id="deleteBtn" class="btn-delete" style="display:none;" onclick="deleteProduct()">🗑️ מחק מוצר לצמיתות</button>
+            </div>
         </div>
-        <input type="hidden" id="editId">
-        <input type="text" id="name" placeholder="שם הדגם">
-        <select id="category" class="input-style">
-            <option value="שטח">סכיני שטח</option>
-            <option value="מטבח">סכיני מטבח</option>
-            <option value="אספנות">אספנות</option>
-            <option value="נדנים">נדנים</option>
-        </select>
-        <input type="text" id="mat" placeholder="חומרים">
-        <input type="number" id="price" placeholder="מחיר (₪)">
-        <textarea id="desc" rows="2" placeholder="תיאור..."></textarea>
-        <div class="file-upload">
-            <label for="imgs">📸 בחר תמונות</label>
-            <input type="file" id="imgs" multiple accept="image/*">
-        </div>
-        <button class="btn-save" id="saveBtn" onclick="save()">שמור בגלריה</button>
     </div>
 
     <div class="filter-bar">
-        <button onclick="filterItems('all')" class="filter-btn active">הכל</button>
-        <button onclick="filterItems('available')" class="filter-btn">זמין</button>
-        <button onclick="filterItems('sold')" class="filter-btn">נמכר</button>
+        <button id="filter-all" onclick="filterItems('all')" class="filter-btn active">הכל</button>
+        <button id="filter-available" onclick="filterItems('available')" class="filter-btn">זמין</button>
+        <button id="filter-sold" onclick="filterItems('sold')" class="filter-btn">נמכר</button>
     </div>
 
     <div id="list" class="grid-container"></div>
 </div>
 
-<div id="viewModal" class="modal" onclick="if(event.target==this)closeView()">
-    <div class="modal-content">
-        <span class="close-modal" onclick="closeView()">&times;</span>
+<div id="viewModal" class="full-modal" style="display:none;">
+    <div class="full-modal-content">
+        <span class="close-view" onclick="closeView()">&times;</span>
         <div id="modalContent"></div>
     </div>
 </div>
 
-<footer>O-KAR Custom Blades | V2.7.0</footer>
+<footer>O-KAR Custom Blades | V2.9.0</footer>
 
 <script>
-    const STORAGE_KEY = 'okar_db_v27';
-    let db = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-    let currentFilter = 'all';
-    let deferredPrompt;
-
-    // לוגיקת התקנה
-    const pwaBtn = document.getElementById('pwaBtn');
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault(); deferredPrompt = e;
-        pwaBtn.classList.replace('pwa-off', 'pwa-on');
-    });
-
-    pwaBtn.addEventListener('click', async () => {
-        if (deferredPrompt) {
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') pwaBtn.classList.replace('pwa-on', 'pwa-off');
-            deferredPrompt = null;
+    const STORAGE_KEY = 'okar_db_v29';
+    
+    // מוצרי בדיקה
+    const demoItems = [
+        {
+            id: 101, n: "סכין שטח 'ערבה'", p: "1450", c: "שטח", 
+            m: "פלדת D2, ידית עץ זית", d: "סכין חזקה לעבודה אינטנסיבית בשטח.", 
+            images: ["https://images.unsplash.com/photo-1574359411659-15573a27f812?w=500"], sold: false
+        },
+        {
+            id: 102, n: "סכין שף יפנית", p: "1100", c: "מטבח", 
+            m: "פלדת סנדוויק, ידית מיקרטה שחורה", d: "איזון מושלם לחיתוך מדויק.", 
+            images: ["https://images.unsplash.com/photo-1593414220166-085ca802cc41?w=500"], sold: true
         }
-    });
+    ];
+
+    let db = JSON.parse(localStorage.getItem(STORAGE_KEY)) || demoItems;
+    let currentFilter = 'all';
 
     function goHome() {
-        closeView();
-        document.getElementById('formContainer').style.display = 'none';
+        document.getElementById('formModal').style.display = 'none';
+        document.getElementById('viewModal').style.display = 'none';
+        document.body.style.overflow = "auto";
+        filterItems('all');
         window.scrollTo({top: 0, behavior: 'smooth'});
     }
 
     function toggleForm() {
-        const f = document.getElementById('formContainer');
-        f.style.display = f.style.display === 'none' ? 'block' : 'none';
+        resetForm();
+        document.getElementById('deleteBtn').style.display = 'none';
+        document.getElementById('formModal').style.display = 'block';
+        document.body.style.overflow = "hidden";
     }
 
     function save() {
         const id = document.getElementById('editId').value;
         const n = document.getElementById('name').value;
         const p = document.getElementById('price').value;
-        if(!n || !p) return alert("שם ומחיר חובה");
+        if(!n || !p) return alert("נא להזין שם ומחיר");
 
         const files = document.getElementById('imgs').files;
-        const process = (imgs) => {
-            const item = {
+        const processSave = (imgs) => {
+            const newItem = {
                 id: id ? Number(id) : Date.now(),
                 n, p, c: document.getElementById('category').value,
                 m: document.getElementById('mat').value,
                 d: document.getElementById('desc').value,
-                images: imgs.length ? imgs : (id ? db.find(x=>x.id==id).images : ["https://via.placeholder.com/300?text=O-KAR"]),
+                images: imgs.length ? imgs : (id ? db.find(x=>x.id==id).images : ["https://via.placeholder.com/400?text=O-KAR"]),
                 sold: id ? db.find(x=>x.id==id).sold : false
             };
-            if(id) db[db.findIndex(x=>x.id==id)] = item;
-            else db.unshift(item);
-            updateDB(); resetForm(); toggleForm();
+            if(id) db[db.findIndex(x=>x.id==id)] = newItem;
+            else db.unshift(newItem);
+            updateDB(); goHome();
         };
 
         if(files.length) {
             Promise.all(Array.from(files).map(f => new Promise(res => {
                 const r = new FileReader(); r.onload = e => res(e.target.result); r.readAsDataURL(f);
-            }))).then(process);
-        } else process([]);
+            }))).then(processSave);
+        } else processSave([]);
+    }
+
+    function deleteProduct() {
+        const id = document.getElementById('editId').value;
+        if(confirm("האם אתה בטוח שברצונך למחוק את המוצר לצמיתות?")) {
+            db = db.filter(x => x.id != id);
+            updateDB();
+            goHome();
+        }
     }
 
     function render() {
         const listDiv = document.getElementById('list');
         const filtered = db.filter(i => currentFilter === 'all' || (currentFilter === 'available' ? !i.sold : i.sold));
+        
+        if(filtered.length === 0) {
+            listDiv.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 50px; color: #aaa;">אין מוצרים להצגה</div>`;
+            return;
+        }
+
         listDiv.innerHTML = filtered.map(i => `
             <div class="item-card shadow ${i.sold ? 'is-sold' : ''}">
-                <div class="card-img" onclick="viewItem(${i.id})"><img src="${i.images[0]}"></div>
+                <div class="card-img" onclick="viewItem(${i.id})"><img src="${i.images[0]}" loading="lazy"></div>
                 <div class="item-info">
                     <div class="title">${i.n}</div>
                     <div class="price">₪${i.p}</div>
@@ -155,23 +202,22 @@
         document.getElementById('modalContent').innerHTML = `
             <div class="m-slider">${i.images.map(s => `<img src="${s}">`).join('')}</div>
             <div class="m-details">
+                <span class="m-tag">${i.c}</span>
                 <h2>${i.n}</h2>
                 <p class="m-price">₪${i.p}</p>
                 <div class="m-specs">
                     <p><strong>חומרים:</strong> ${i.m || 'לא צוין'}</p>
-                    <p><strong>תיאור:</strong> ${i.d || 'אין תיאור'}</p>
+                    <hr>
+                    <p>${i.d || 'אין תיאור זמין למוצר זה.'}</p>
                 </div>
-                <button class="btn-save" onclick="shareWA('${i.n}', '${i.p}')">שתף בוואצאפ</button>
+                <button class="btn-save-final" onclick="shareWA('${i.n}', '${i.p}')">שלח הודעת התעניינות בוואצאפ</button>
             </div>
         `;
         document.getElementById('viewModal').style.display = "block";
-        document.body.style.overflow = "hidden"; // ביטול גלילה ברקע
+        document.body.style.overflow = "hidden";
     }
 
-    function closeView() { 
-        document.getElementById('viewModal').style.display = "none"; 
-        document.body.style.overflow = "auto"; 
-    }
+    function closeView() { goHome(); }
 
     function editItem(id) {
         const i = db.find(x => x.id == id);
@@ -180,8 +226,10 @@
         document.getElementById('price').value = i.p;
         document.getElementById('mat').value = i.m;
         document.getElementById('desc').value = i.d;
+        document.getElementById('category').value = i.c;
         document.getElementById('formTitle').innerText = "עריכת מוצר";
-        toggleForm();
+        document.getElementById('deleteBtn').style.display = 'block';
+        document.getElementById('formModal').style.display = 'block';
     }
 
     function toggleSold(id) {
@@ -190,10 +238,24 @@
         updateDB();
     }
 
-    function shareWA(n, p) { window.open(`https://wa.me/?text=${encodeURIComponent('היי, אשמח לפרטים על ' + n + ' ב-₪' + p)}`); }
-    function updateDB() { localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); render(); }
-    function resetForm() { ['editId','name','mat','price','desc','imgs'].forEach(id => document.getElementById(id).value = ''); }
-    function filterItems(t) { currentFilter = t; document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.onclick.toString().includes(t))); render(); }
+    function shareWA(n, p) { window.open(`https://wa.me/?text=${encodeURIComponent('היי, אשמח לפרטים על ' + n + ' במחיר ' + p + ' ש"ח')}`); }
+    
+    function updateDB() { 
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); 
+        render(); 
+    }
+
+    function resetForm() { 
+        ['editId','name','mat','price','desc','imgs'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('formTitle').innerText = "הוספת מוצר";
+    }
+
+    function filterItems(t) { 
+        currentFilter = t; 
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('filter-' + t).classList.add('active');
+        render(); 
+    }
     
     function exportData() {
         const a = document.createElement('a');
@@ -203,9 +265,10 @@
 
     function importData(e) {
         const r = new FileReader();
-        r.onload = ev => { try { db = JSON.parse(ev.target.result); updateDB(); } catch(e) { alert("קובץ לא תקין"); } };
+        r.onload = ev => { try { db = JSON.parse(ev.target.result); updateDB(); } catch(err){ alert("קובץ לא תקין"); } };
         r.readAsText(e.target.files[0]);
     }
+
     render();
 </script>
 </body>
