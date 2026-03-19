@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>O-Kar Custom Blades | V4.1.0</title>
+    <title>O-Kar Custom Blades | V4.3.0</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="logo.png">
@@ -16,7 +16,7 @@
     </div>
     <div class="header-controls">
         <button class="nav-btn home-btn" onclick="goHome()">🏠 בית</button>
-        <button id="pwaBtn" class="nav-btn pwa-status">📲 התקנה</button>
+        <button id="pwaBtn" class="nav-btn">📲 התקנה</button>
         <button class="nav-btn" onclick="location.reload(true)">🔄 רענון</button>
         <button class="nav-btn" onclick="exportData()">💾 גיבוי</button>
         <label class="nav-btn">📂 שחזור<input type="file" id="fileIn" accept=".json" onchange="importData(event)" style="display:none;"></label>
@@ -27,6 +27,11 @@
     <button class="big-add-btn shadow" onclick="toggleForm()">
         <span>➕</span> הוספת מוצר חדש למערכת
     </button>
+
+    <div id="statsRow" class="stats-container shadow">
+        <div class="stat-item">📦 מלאי: <span id="totalItems">0</span></div>
+        <div class="stat-item">💰 נמכרו: <span id="totalSold">0</span></div>
+    </div>
 
     <div id="formModal" class="full-modal" style="display:none;">
         <div class="form-header-bar">
@@ -41,8 +46,9 @@
                 <div class="input-group"><label>חומרים</label><input type="text" id="mat" placeholder="סוג פלדה וידית"></div>
                 <div class="input-group"><label>תיאור</label><textarea id="desc" rows="3" placeholder="פירוט נוסף..."></textarea></div>
                 <div class="file-area shadow">
-                    <p>📸 בחירת תמונות (ללא הגבלה)</p>
+                    <p>📸 צילום או בחירת תמונות</p>
                     <input type="file" id="imgs" multiple accept="image/*">
+                    <small>המערכת מכווצת תמונות גדולות אוטומטית</small>
                 </div>
                 <button id="saveBtn" class="btn-save-final shadow" onclick="save()">שמור ופרסם</button>
                 <button id="deleteBtn" class="btn-delete" style="display:none;" onclick="deleteProduct()">🗑️ מחק מוצר</button>
@@ -58,56 +64,43 @@
     <div id="modalContent"></div>
 </div>
 
-<div id="installGuide" class="modal-overlay" onclick="this.style.display='none'" style="display:none;">
-    <div class="guide-box shadow" onclick="event.stopPropagation()">
-        <h3>התקנת אפליקציה</h3>
-        <p>לחץ על תפריט הדפדפן ובחר "הוספה למסך הבית".</p>
-        <button class="btn-save-final" onclick="document.getElementById('installGuide').style.display='none'">הבנתי</button>
-    </div>
-</div>
-
-<footer>O-KAR Custom Blades | V4.1.0</footer>
+<footer>O-KAR Custom Blades | V4.3.0</footer>
 
 <script>
     const DB_NAME = 'okar_database_final';
-    const MY_PHONE = "0524704226"; // המספר שלך
+    const MY_PHONE = "0524704226";
     let db = [];
-    let deferredPrompt;
 
     function initApp() {
         const saved = localStorage.getItem(DB_NAME);
         if (saved) db = JSON.parse(saved);
         render();
         setupPWA();
-        checkDirectLink();
-    }
-
-    function checkDirectLink() {
         const urlParams = new URLSearchParams(window.location.search);
-        const productId = urlParams.get('id');
-        if (productId) {
-            setTimeout(() => viewItem(productId), 500);
-        }
+        if (urlParams.get('id')) setTimeout(() => viewItem(urlParams.get('id')), 500);
     }
 
-    function setupPWA() {
-        const pwaBtn = document.getElementById('pwaBtn');
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            pwaBtn.style.backgroundColor = "#007bff";
-            pwaBtn.style.color = "white";
+    async function compressImage(file) {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 1000;
+                    let width = img.width;
+                    let height = img.height;
+                    if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                    canvas.width = width; canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    resolve(canvas.toDataURL('image/jpeg', 0.7));
+                };
+            };
         });
     }
-
-    document.getElementById('pwaBtn').addEventListener('click', async () => {
-        if (deferredPrompt) {
-            deferredPrompt.prompt();
-            deferredPrompt = null;
-        } else {
-            document.getElementById('installGuide').style.display = 'flex';
-        }
-    });
 
     async function save() {
         const n = document.getElementById('name').value;
@@ -117,17 +110,16 @@
 
         const btn = document.getElementById('saveBtn');
         btn.disabled = true;
-        btn.innerText = "שומר...";
+        btn.innerText = "מעבד...";
 
-        const files = Array.from(document.getElementById('imgs').files);
+        const fileInput = document.getElementById('imgs');
         let images = [];
 
-        if (files.length > 0) {
-            images = await Promise.all(files.map(f => new Promise((res) => {
-                const r = new FileReader();
-                r.onload = e => res(e.target.result);
-                r.readAsDataURL(f);
-            })));
+        if (fileInput.files.length > 0) {
+            for (let file of fileInput.files) {
+                const compressed = await compressImage(file);
+                images.push(compressed);
+            }
         }
 
         const item = {
@@ -135,15 +127,13 @@
             n, p, 
             m: document.getElementById('mat').value,
             d: document.getElementById('desc').value,
-            images: images.length > 0 ? images : (id ? db.find(x=>x.id==id).images : ["https://via.placeholder.com/400?text=O-KAR"]),
+            // לוגו ברירת מחדל אם לא נבחרו תמונות
+            images: images.length > 0 ? images : (id ? db.find(x=>x.id==id).images : ["logo.png"]),
             sold: id ? db.find(x=>x.id==id).sold : false
         };
 
-        if(id) {
-            db[db.findIndex(x=>x.id==id)] = item;
-        } else {
-            db.unshift(item);
-        }
+        if(id) db[db.findIndex(x=>x.id==id)] = item;
+        else db.unshift(item);
 
         updateDB();
         btn.disabled = false;
@@ -160,13 +150,17 @@
                     <div class="title">${i.n}</div>
                     <div class="price">₪${i.p}</div>
                     <div class="item-btns">
-                        <button class="btn-i wa" onclick="contactSeller('${i.n.replace(/'/g, "\\'")}', '${i.p}', ${i.id})" title="צור קשר">💬</button>
-                        <button class="btn-i ed" onclick="editItem(${i.id})">✏️</button>
-                        <button class="btn-i st" onclick="toggleSold(${i.id})">${i.sold ? '🛒' : '✅'}</button>
+                        <button class="btn-i" onclick="contactSeller('${i.n}', '${i.p}', ${i.id})">💬</button>
+                        <button class="btn-i" onclick="editItem(${i.id})">✏️</button>
+                        <button class="btn-i" onclick="toggleSold(${i.id})">${i.sold ? '🛒' : '✅'}</button>
                     </div>
                 </div>
             </div>
-        `).join('') : '<p class="empty-msg">אין פריטים במערכת.</p>';
+        `).join('') : '<p class="empty-msg">המלאי ריק.</p>';
+        
+        // עדכון סטטיסטיקה
+        document.getElementById('totalItems').innerText = db.length;
+        document.getElementById('totalSold').innerText = db.filter(i => i.sold).length;
     }
 
     function viewItem(id) {
@@ -178,7 +172,7 @@
                 <h2>${i.n}</h2>
                 <p class="m-price">₪${i.p}</p>
                 <div class="m-specs shadow"><p><strong>חומרים:</strong> ${i.m || '-'}</p><p>${i.d || '-'}</p></div>
-                <button class="btn-wa-big shadow" onclick="contactSeller('${i.n.replace(/'/g, "\\'")}', '${i.p}', ${i.id})">💬 צור קשר לרכישה</button>
+                <button class="btn-wa-big shadow" onclick="contactSeller('${i.n}', '${i.p}', ${i.id})">💬 צור קשר בוואצאפ</button>
             </div>
         `;
         document.getElementById('viewModal').style.display = "block";
@@ -186,18 +180,9 @@
     }
 
     function contactSeller(n, p, id) {
-        const baseUrl = window.location.href.split('?')[0];
-        const productUrl = `${baseUrl}?id=${id}`;
-        
-        const message = `היי, אני מעוניין לקבל פרטים נוספים על הדגם הזה מבית O-KAR:
-*${n}* 🔥
-
-המחיר שמופיע: *${p} ש"ח*.
-אשמח לדעת אם זה זמין.
-קישור למוצר: ${productUrl}`;
-
-        // שליחה ישירה למספר הטלפון שלך
-        window.open(`https://wa.me/972${MY_PHONE.substring(1)}?text=${encodeURIComponent(message)}`, '_blank');
+        const url = `${window.location.href.split('?')[0]}?id=${id}`;
+        const msg = `היי, אני מעוניין במוצר: *${n}* (₪${p}).\nלינק: ${url}`;
+        window.open(`https://wa.me/972${MY_PHONE.substring(1)}?text=${encodeURIComponent(msg)}`, '_blank');
     }
 
     function editItem(id) {
@@ -207,10 +192,17 @@
         document.getElementById('price').value = i.p;
         document.getElementById('mat').value = i.m;
         document.getElementById('desc').value = i.d;
-        document.getElementById('formTitle').innerText = "עריכת פריט";
+        document.getElementById('formTitle').innerText = "עריכה";
         document.getElementById('deleteBtn').style.display = 'block';
         document.getElementById('formModal').style.display = 'block';
-        document.body.classList.add('no-scroll');
+    }
+
+    function deleteProduct() {
+        if(confirm("למחוק סופית?")) {
+            db = db.filter(x => x.id != document.getElementById('editId').value);
+            updateDB();
+            goHome();
+        }
     }
 
     function toggleSold(id) {
@@ -221,13 +213,12 @@
 
     function updateDB() { localStorage.setItem(DB_NAME, JSON.stringify(db)); render(); }
     function goHome() { 
-        const baseUrl = window.location.href.split('?')[0];
-        window.history.replaceState({}, document.title, baseUrl);
+        window.history.replaceState({}, '', window.location.href.split('?')[0]);
         document.querySelectorAll('.full-modal').forEach(m => m.style.display = 'none'); 
         document.body.classList.remove('no-scroll'); 
     }
-    function toggleForm() { resetForm(); document.getElementById('deleteBtn').style.display = 'none'; document.getElementById('formModal').style.display = 'block'; document.body.classList.add('no-scroll'); }
-    function resetForm() { ['editId','name','mat','price','desc','imgs'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value = ''; }); document.getElementById('formTitle').innerText = "פרטי מוצר"; }
+    function toggleForm() { resetForm(); document.getElementById('deleteBtn').style.display = 'none'; document.getElementById('formModal').style.display = 'block'; }
+    function resetForm() { ['editId','name','mat','price','desc','imgs'].forEach(id => document.getElementById(id).value = ''); }
     function exportData() {
         const a = document.createElement('a');
         a.href = URL.createObjectURL(new Blob([JSON.stringify(db)], {type: "application/json"}));
@@ -238,6 +229,7 @@
         r.onload = ev => { db = JSON.parse(ev.target.result); updateDB(); };
         r.readAsText(e.target.files[0]);
     }
+    function setupPWA() { /* logic here */ }
     function closeView() { goHome(); }
 </script>
 </body>
