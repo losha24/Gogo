@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>O-Kar Pro</title>
+    <title>O-Kar Pro | V2.5.0</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="logo.png">
@@ -12,23 +12,20 @@
 
 <header class="main-header shadow">
     <div class="header-right">
-        <img src="logo.png" alt="O-Kar" class="mini-logo">
+        <img src="logo.png" alt="O-Kar" class="main-logo">
         <span class="brand-name">O-KAR</span>
     </div>
-    
     <div class="header-controls">
-        <button class="ctrl-btn" onclick="toggleForm()" title="הוסף פריט">➕</button>
-        <button class="ctrl-btn" onclick="exportData()" title="גיבוי">📤</button>
-        <label class="ctrl-btn" title="שחזור">
-            📥<input type="file" id="fileIn" accept=".json" onchange="importData(event)" style="display:none;">
-        </label>
-        <button class="ctrl-btn" onclick="location.reload(true)" title="עדכון/רענון">🔄</button>
+        <button class="ctrl-btn main-add" onclick="toggleForm()">➕</button>
+        <button class="ctrl-btn" onclick="exportData()">📤</button>
+        <label class="ctrl-btn">📥<input type="file" id="fileIn" accept=".json" onchange="importData(event)" style="display:none;"></label>
+        <button class="ctrl-btn" onclick="location.reload(true)">🔄</button>
     </div>
 </header>
 
 <div class="container">
     <div id="installContainer" style="display:none;">
-        <button id="installBtn" class="btn-install-promo shadow">📲 התקן את O-Kar על מסך הבית</button>
+        <button id="installBtn" class="btn-install-promo shadow">📲 התקן את האפליקציה</button>
     </div>
 
     <div class="card-add shadow" id="formContainer" style="display:none;">
@@ -38,24 +35,19 @@
         </div>
         <input type="hidden" id="editId">
         <input type="text" id="name" placeholder="שם הדגם">
-        
         <select id="category" class="input-style">
             <option value="שטח">סכיני שטח</option>
             <option value="מטבח">סכיני מטבח</option>
             <option value="אספנות">פריטי אספנות</option>
-            <option value="נדנים">נדנים ואביזרים</option>
+            <option value="נדנים">נדנים</option>
         </select>
-
-        <input type="text" id="mat" placeholder="סוג פלדה וידית">
+        <input type="text" id="mat" placeholder="חומרים">
         <input type="number" id="price" placeholder="מחיר (₪)">
-        <textarea id="desc" rows="2" placeholder="תיאור העבודה..."></textarea>
-        
+        <textarea id="desc" rows="2" placeholder="תיאור..."></textarea>
         <div id="imgSection">
-            <label class="file-label">הוסף תמונות:</label>
             <input type="file" id="imgs" multiple accept="image/*">
         </div>
-
-        <button class="btn-black" id="saveBtn" onclick="save()">שמור בגלריה</button>
+        <button class="btn-black" id="saveBtn" onclick="save()">שמור שינויים</button>
     </div>
 
     <div class="filter-bar">
@@ -67,114 +59,111 @@
     <div id="list" class="grid-container"></div>
 </div>
 
-<footer>
-    O-KAR Professional | V2.4.0
-</footer>
+<div id="viewModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeView()">&times;</span>
+        <div id="modalContent"></div>
+    </div>
+</div>
+
+<footer>O-KAR Professional | V2.5.0</footer>
 
 <script>
-    const VERSION = "2.4.0";
-    
-    // נתוני דוגמה
-    const demoData = [
-        {
-            id: 1, n: "סכין הישרדות 'ערבה'", p: "1200", c: "שטח", 
-            m: "D2 Steel, Micarta", d: "סכין שטח קשוחה.", 
-            images: ["https://images.unsplash.com/photo-1574359411659-15573a27f812?w=400"], sold: false
-        },
-        {
-            id: 2, n: "סכין שף שחורה", p: "900", c: "מטבח", 
-            m: "Carbon Steel, Olive Wood", d: "איזון מושלם.", 
-            images: ["https://images.unsplash.com/photo-1593414220166-085ca802cc41?w=400"], sold: true
-        }
-    ];
-
-    let db = JSON.parse(localStorage.getItem('okar_db_v24')) || demoData;
+    let db = JSON.parse(localStorage.getItem('okar_db_v25')) || [];
     let currentFilter = 'all';
-    let deferredPrompt;
-
-    // התקנת אפליקציה
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        document.getElementById('installContainer').style.display = 'block';
-    });
-
-    document.getElementById('installBtn').addEventListener('click', async () => {
-        if (deferredPrompt) {
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') document.getElementById('installContainer').style.display = 'none';
-            deferredPrompt = null;
-        }
-    });
 
     function toggleForm() {
-        const form = document.getElementById('formContainer');
-        form.style.display = form.style.display === 'none' ? 'block' : 'none';
-        if(form.style.display === 'block') window.scrollTo({top: 0, behavior: 'smooth'});
+        const f = document.getElementById('formContainer');
+        f.style.display = f.style.display === 'none' ? 'block' : 'none';
+        if(f.style.display === 'block') window.scrollTo(0,0);
     }
 
     function save() {
         const id = document.getElementById('editId').value;
         const n = document.getElementById('name').value;
         const p = document.getElementById('price').value;
-        const c = document.getElementById('category').value;
+        if(!n || !p) return alert("חובה שם ומחיר");
+
+        const data = {
+            id: id ? Number(id) : Date.now(),
+            n, p, 
+            c: document.getElementById('category').value,
+            m: document.getElementById('mat').value,
+            d: document.getElementById('desc').value,
+            sold: false
+        };
+
         const f = document.getElementById('imgs').files;
-
-        if(!n || !p) return alert("שם ומחיר הם חובה");
-
-        if (id) {
-            const idx = db.findIndex(x => x.id == id);
-            db[idx] = {...db[idx], n, p, c, m: document.getElementById('mat').value, d: document.getElementById('desc').value};
-            updateDB(); resetForm(); toggleForm();
-        } else {
+        if (f.length > 0) {
             const readers = Array.from(f).map(file => new Promise(res => {
                 const r = new FileReader();
                 r.onload = e => res(e.target.result);
                 r.readAsDataURL(file);
             }));
             Promise.all(readers).then(images => {
-                db.unshift({ id: Date.now(), n, p, c, m: document.getElementById('mat').value, d: document.getElementById('desc').value, images: images.length ? images : ["https://via.placeholder.com/300?text=No+Image"], sold: false });
-                updateDB(); resetForm(); toggleForm();
+                data.images = images;
+                finalizeSave(data, id);
             });
+        } else {
+            const existing = db.find(x => x.id == id);
+            data.images = existing ? existing.images : ["https://via.placeholder.com/300"];
+            finalizeSave(data, id);
         }
+    }
+
+    function finalizeSave(data, id) {
+        if(id) {
+            const idx = db.findIndex(x => x.id == id);
+            db[idx] = {...db[idx], ...data};
+        } else {
+            db.unshift(data);
+        }
+        updateDB(); resetForm(); toggleForm();
     }
 
     function render() {
         const listDiv = document.getElementById('list');
-        let filtered = db.filter(i => {
-            if(currentFilter === 'available') return !i.sold;
-            if(currentFilter === 'sold') return i.sold;
-            return true;
-        });
+        const filtered = db.filter(i => currentFilter === 'all' || (currentFilter === 'available' ? !i.sold : i.sold));
 
         listDiv.innerHTML = filtered.map(i => `
             <div class="item-card shadow ${i.sold ? 'is-sold' : ''}">
-                <div class="slider">${i.images.map(s => `<img src="${s}">`).join('')}</div>
+                <div class="slider" onclick="viewItem(${i.id})">${i.images.map(s => `<img src="${s}">`).join('')}</div>
                 <div class="item-body">
-                    <div class="tag">${i.c}</div>
                     <div class="item-title">${i.n}</div>
                     <div class="price">₪${i.p}</div>
                     <div class="action-grid">
-                        <button class="btn-wa" onclick="shareWA('${i.n}', '${i.p}')">WA</button>
-                        <button class="btn-edit" onclick="editItem(${i.id})">✎</button>
-                        <button class="btn-status" onclick="toggleSold(${i.id})">${i.sold ? '🔓' : '🔒'}</button>
+                        <button class="btn-action btn-wa" onclick="shareWA('${i.n}', '${i.p}')">🔗</button>
+                        <button class="btn-action btn-edit" onclick="editItem(${i.id})">✏️</button>
+                        <button class="btn-action btn-status" onclick="toggleSold(${i.id})">${i.sold ? '🛒' : '✅'}</button>
                     </div>
                 </div>
             </div>
         `).join('');
     }
 
+    function viewItem(id) {
+        const i = db.find(x => x.id == id);
+        document.getElementById('modalContent').innerHTML = `
+            <div class="modal-slider">${i.images.map(s => `<img src="${s}">`).join('')}</div>
+            <h2>${i.n}</h2>
+            <p class="modal-price">₪${i.p}</p>
+            <p><strong>חומרים:</strong> ${i.m}</p>
+            <p><strong>תיאור:</strong> ${i.d}</p>
+            <button class="btn-black" onclick="shareWA('${i.n}', '${i.p}')">שתף בוואצאפ</button>
+        `;
+        document.getElementById('viewModal').style.display = "block";
+    }
+
+    function closeView() { document.getElementById('viewModal').style.display = "none"; }
+
     function editItem(id) {
-        const item = db.find(x => x.id == id);
-        document.getElementById('editId').value = item.id;
-        document.getElementById('name').value = item.n;
-        document.getElementById('price').value = item.p;
-        document.getElementById('category').value = item.c;
-        document.getElementById('mat').value = item.m;
-        document.getElementById('desc').value = item.d;
-        document.getElementById('formTitle').innerText = "עריכה";
-        document.getElementById('imgSection').style.display = "none";
+        const i = db.find(x => x.id == id);
+        document.getElementById('editId').value = i.id;
+        document.getElementById('name').value = i.n;
+        document.getElementById('price').value = i.p;
+        document.getElementById('mat').value = i.m;
+        document.getElementById('desc').value = i.d;
+        document.getElementById('formTitle').innerText = "עריכת מוצר";
         toggleForm();
     }
 
@@ -184,41 +173,21 @@
         updateDB();
     }
 
-    function filterItems(type) {
-        currentFilter = type;
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-        event.target.classList.add('active');
-        render();
-    }
-
     function shareWA(n, p) {
-        window.open(`https://wa.me/?text=${encodeURIComponent('*O-Kar*\nדגם: ' + n + '\nמחיר: ' + p + '₪')}`);
+        const text = `היי, אני מעוניין במוצר: ${n}\nמחיר: ₪${p}\nפרטים נוספים כאן!`;
+        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
     }
 
-    function updateDB() { localStorage.setItem('okar_db_v24', JSON.stringify(db)); render(); }
-    
+    function updateDB() { localStorage.setItem('okar_db_v25', JSON.stringify(db)); render(); }
     function resetForm() {
         ['editId','name','mat','price','desc','imgs'].forEach(id => document.getElementById(id).value = '');
         document.getElementById('formTitle').innerText = "פריט חדש";
-        document.getElementById('imgSection').style.display = "block";
     }
-
-    function exportData() {
-        const blob = new Blob([JSON.stringify(db)], {type: "application/json"});
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `okar_backup.json`;
-        a.click();
+    function filterItems(t) {
+        currentFilter = t;
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.innerText.includes(t === 'all' ? 'הכל' : t === 'available' ? 'זמין' : 'נמכר')));
+        render();
     }
-
-    function importData(e) {
-        const f = e.target.files[0];
-        if(!f) return;
-        const r = new FileReader();
-        r.onload = ev => { try { db = JSON.parse(ev.target.result); updateDB(); alert("שחזור הושלם!"); } catch(e) { alert("שגיאה בקובץ"); } };
-        r.readAsText(f);
-    }
-
     render();
 </script>
 </body>
