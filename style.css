@@ -2,58 +2,75 @@
     --bg: #ffffff;
     --accent: #e63946;
     --dark: #121212;
+    --yellow: #ffcc00;
+    --blue: #007bff;
     --gray: #f2f2f2;
 }
 
-body { font-family: -apple-system, sans-serif; margin: 0; direction: rtl; padding-top: 85px; }
+body { font-family: -apple-system, sans-serif; margin: 0; direction: rtl; padding-top: 85px; background: #fafafa; }
 
-/* לוגו מוגדל */
+/* הבר העליון המעוצב */
 .main-header {
-    background: white; height: 80px; padding: 0 20px;
+    background: white; height: 75px; padding: 0 15px;
     display: flex; justify-content: space-between; align-items: center;
     position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
-    border-bottom: 2px solid var(--accent);
+    border-bottom: 2px solid #eee;
 }
-.main-logo { height: 55px; width: auto; } /* הגדלת הלוגו */
-.brand-name { font-weight: 900; font-size: 1.5rem; letter-spacing: 3px; }
 
-.header-controls { display: flex; gap: 8px; }
-.ctrl-btn { 
-    width: 40px; height: 40px; border-radius: 50%; border: none; 
-    background: var(--gray); font-size: 1.1rem; cursor: pointer;
+.main-logo { height: 50px; width: auto; }
+
+.header-controls { display: flex; gap: 8px; align-items: center; }
+
+/* כפתורי טקסט בבר */
+.nav-btn {
+    background: var(--gray); border: none; padding: 8px 12px;
+    border-radius: 8px; font-weight: bold; font-size: 0.8rem; cursor: pointer;
 }
-.main-add { background: var(--dark); color: white; }
 
-.container { padding: 15px; max-width: 600px; margin: auto; }
+/* כפתור התקנה צבעוני */
+.pwa-on { background: var(--blue) !important; color: white; }
+.pwa-off { background: var(--accent) !important; color: white; }
+
+/* כפתור פלוס צהוב */
+.add-btn-round {
+    width: 45px; height: 45px; border-radius: 50%; border: none;
+    background: var(--yellow); font-size: 1.8rem; font-weight: bold;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.container { padding: 15px; max-width: 800px; margin: auto; }
 
 /* גריד מוצרים */
-.grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-.item-card { background: white; border-radius: 15px; overflow: hidden; border: 1px solid #eee; position: relative; }
-.item-card.is-sold { opacity: 0.6; filter: grayscale(1); }
+.grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.item-card { background: white; border-radius: 15px; overflow: hidden; border: 1px solid #eee; }
+.card-img { height: 160px; overflow: hidden; cursor: pointer; }
+.card-img img { width: 100%; height: 100%; object-fit: cover; }
+.item-card.is-sold { opacity: 0.5; filter: grayscale(1); }
 
-.slider { height: 180px; background: #fafafa; display: flex; overflow-x: auto; cursor: pointer; }
-.slider img { min-width: 100%; object-fit: cover; }
+.item-info { padding: 10px; text-align: center; }
+.title { font-weight: bold; font-size: 0.9rem; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.price { font-size: 1.1rem; font-weight: 900; color: var(--accent); margin-bottom: 10px; }
 
-.item-body { padding: 12px; text-align: center; }
-.item-title { font-weight: 800; font-size: 0.95rem; margin-bottom: 5px; }
-.price { font-size: 1.2rem; font-weight: 900; color: var(--accent); }
+.item-btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; }
+.btn-i { border: none; padding: 8px 0; border-radius: 6px; cursor: pointer; font-size: 1rem; background: var(--gray); }
+.wa { background: #e8f5e9; }
 
-/* אייקונים חדשים במוצר */
-.action-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 10px; }
-.btn-action { padding: 10px 0; border: none; border-radius: 10px; cursor: pointer; font-size: 1.1rem; background: var(--gray); }
-.btn-wa { background: #e8f5e9; }
+/* טופס */
+.card-add { background: white; padding: 20px; border-radius: 20px; margin-bottom: 20px; border: 1px solid #eee; }
+.form-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+input, select, textarea { width: 100%; padding: 12px; margin-top: 8px; border-radius: 10px; border: 1px solid #eee; background: #f9f9f9; box-sizing: border-box; }
+.btn-save { background: var(--dark); color: white; width: 100%; padding: 15px; border-radius: 10px; border: none; margin-top: 15px; font-weight: bold; }
 
-/* Modal (תצוגת מוצר) */
+/* מודל */
 .modal { display: none; position: fixed; z-index: 2000; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); }
-.modal-content { background: white; margin: 5% auto; padding: 20px; width: 90%; max-width: 500px; border-radius: 20px; position: relative; }
-.close-modal { position: absolute; left: 20px; top: 10px; font-size: 2rem; cursor: pointer; }
-.modal-slider { display: flex; overflow-x: auto; height: 300px; border-radius: 15px; margin-bottom: 15px; }
-.modal-slider img { min-width: 100%; object-fit: cover; }
-.modal-price { font-size: 1.5rem; font-weight: 900; color: var(--accent); }
+.modal-content { background: white; margin: 10% auto; padding: 20px; width: 90%; max-width: 500px; border-radius: 20px; position: relative; }
+.m-slider { display: flex; overflow-x: auto; height: 250px; border-radius: 15px; margin-bottom: 15px; }
+.m-slider img { min-width: 100%; object-fit: cover; }
 
-.filter-bar { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding: 10px 0; }
-.filter-btn { padding: 8px 20px; border-radius: 20px; border: 1px solid #eee; background: white; cursor: pointer; }
+.filter-bar { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
+.filter-btn { padding: 8px 15px; border-radius: 20px; border: 1px solid #eee; background: white; cursor: pointer; white-space: nowrap; font-size: 0.8rem; }
 .filter-btn.active { background: var(--dark); color: white; }
 
-.shadow { box-shadow: 0 4px 15px rgba(0,0,0,0.06); }
-footer { text-align: center; padding: 40px; color: #ccc; font-size: 0.8rem; }
+.shadow { box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+footer { text-align: center; padding: 40px; color: #ccc; font-size: 0.7rem; }
