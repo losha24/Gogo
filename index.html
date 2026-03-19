@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>O-Kar Custom Blades | V3.9.0</title>
+    <title>O-Kar Custom Blades | V4.1.0</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="logo.png">
@@ -40,12 +40,10 @@
                 <div class="input-group"><label>מחיר (₪)</label><input type="number" id="price" placeholder="מחיר בשקלים"></div>
                 <div class="input-group"><label>חומרים</label><input type="text" id="mat" placeholder="סוג פלדה וידית"></div>
                 <div class="input-group"><label>תיאור</label><textarea id="desc" rows="3" placeholder="פירוט נוסף..."></textarea></div>
-                
                 <div class="file-area shadow">
                     <p>📸 בחירת תמונות (ללא הגבלה)</p>
                     <input type="file" id="imgs" multiple accept="image/*">
                 </div>
-
                 <button id="saveBtn" class="btn-save-final shadow" onclick="save()">שמור ופרסם</button>
                 <button id="deleteBtn" class="btn-delete" style="display:none;" onclick="deleteProduct()">🗑️ מחק מוצר</button>
             </div>
@@ -68,10 +66,11 @@
     </div>
 </div>
 
-<footer>O-KAR Custom Blades | V3.9.0</footer>
+<footer>O-KAR Custom Blades | V4.1.0</footer>
 
 <script>
     const DB_NAME = 'okar_database_final';
+    const MY_PHONE = "0524704226"; // המספר שלך
     let db = [];
     let deferredPrompt;
 
@@ -80,6 +79,15 @@
         if (saved) db = JSON.parse(saved);
         render();
         setupPWA();
+        checkDirectLink();
+    }
+
+    function checkDirectLink() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const productId = urlParams.get('id');
+        if (productId) {
+            setTimeout(() => viewItem(productId), 500);
+        }
     }
 
     function setupPWA() {
@@ -105,7 +113,7 @@
         const n = document.getElementById('name').value;
         const p = document.getElementById('price').value;
         const id = document.getElementById('editId').value;
-        if(!n || !p) return alert("שם ומחיר חובה!");
+        if(!n || !p) return alert("חובה למלא שם ומחיר");
 
         const btn = document.getElementById('saveBtn');
         btn.disabled = true;
@@ -152,7 +160,7 @@
                     <div class="title">${i.n}</div>
                     <div class="price">₪${i.p}</div>
                     <div class="item-btns">
-                        <button class="btn-i wa" onclick="shareWA('${i.n.replace(/'/g, "\\'")}', '${i.p}')">🔗</button>
+                        <button class="btn-i wa" onclick="contactSeller('${i.n.replace(/'/g, "\\'")}', '${i.p}', ${i.id})" title="צור קשר">💬</button>
                         <button class="btn-i ed" onclick="editItem(${i.id})">✏️</button>
                         <button class="btn-i st" onclick="toggleSold(${i.id})">${i.sold ? '🛒' : '✅'}</button>
                     </div>
@@ -163,17 +171,33 @@
 
     function viewItem(id) {
         const i = db.find(x => x.id == id);
+        if(!i) return;
         document.getElementById('modalContent').innerHTML = `
             <div class="m-slider">${i.images.map(s => `<img src="${s}">`).join('')}</div>
             <div class="m-details">
                 <h2>${i.n}</h2>
                 <p class="m-price">₪${i.p}</p>
                 <div class="m-specs shadow"><p><strong>חומרים:</strong> ${i.m || '-'}</p><p>${i.d || '-'}</p></div>
-                <button class="btn-wa-big shadow" onclick="shareWA('${i.n.replace(/'/g, "\\'")}', '${i.p}')">הזמנה בוואצאפ</button>
+                <button class="btn-wa-big shadow" onclick="contactSeller('${i.n.replace(/'/g, "\\'")}', '${i.p}', ${i.id})">💬 צור קשר לרכישה</button>
             </div>
         `;
         document.getElementById('viewModal').style.display = "block";
         document.body.classList.add('no-scroll');
+    }
+
+    function contactSeller(n, p, id) {
+        const baseUrl = window.location.href.split('?')[0];
+        const productUrl = `${baseUrl}?id=${id}`;
+        
+        const message = `היי, אני מעוניין לקבל פרטים נוספים על הדגם הזה מבית O-KAR:
+*${n}* 🔥
+
+המחיר שמופיע: *${p} ש"ח*.
+אשמח לדעת אם זה זמין.
+קישור למוצר: ${productUrl}`;
+
+        // שליחה ישירה למספר הטלפון שלך
+        window.open(`https://wa.me/972${MY_PHONE.substring(1)}?text=${encodeURIComponent(message)}`, '_blank');
     }
 
     function editItem(id) {
@@ -195,12 +219,13 @@
         updateDB();
     }
 
-    function shareWA(n, p) {
-        window.open(`https://wa.me/?text=${encodeURIComponent('היי, מעוניין ב: ' + n + ' במחיר ' + p + ' ש"ח')}`, '_blank');
-    }
-
     function updateDB() { localStorage.setItem(DB_NAME, JSON.stringify(db)); render(); }
-    function goHome() { document.querySelectorAll('.full-modal').forEach(m => m.style.display = 'none'); document.body.classList.remove('no-scroll'); }
+    function goHome() { 
+        const baseUrl = window.location.href.split('?')[0];
+        window.history.replaceState({}, document.title, baseUrl);
+        document.querySelectorAll('.full-modal').forEach(m => m.style.display = 'none'); 
+        document.body.classList.remove('no-scroll'); 
+    }
     function toggleForm() { resetForm(); document.getElementById('deleteBtn').style.display = 'none'; document.getElementById('formModal').style.display = 'block'; document.body.classList.add('no-scroll'); }
     function resetForm() { ['editId','name','mat','price','desc','imgs'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value = ''; }); document.getElementById('formTitle').innerText = "פרטי מוצר"; }
     function exportData() {
