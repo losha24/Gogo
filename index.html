@@ -3,23 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>O-Kar Pro | Premium Management</title>
+    <title>O-Kar Pro</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="logo.png">
-    <meta name="theme-color" content="#ffffff">
 </head>
 <body>
 
-<div id="updatePop" class="banner" onclick="location.reload(true)">✨ גרסה 2.2.0 זמינה - לחץ לרענון ✨</div>
+<div id="updatePop" class="banner" onclick="location.reload(true)">✨ גרסה 2.3.0 זמינה - לחץ לעדכון ✨</div>
 
 <header>
-    <img src="logo.png" alt="O-Kar Logo" style="height: 60px; margin-bottom: 10px;">
-    <div class="logo-box">O-KAR</div>
-    <div class="ver-tag">PROFESSIONAL ARMORY | V2.2.0</div>
+    <div class="header-top">
+        <img src="logo.png" alt="O-Kar Logo" class="main-logo">
+        <div class="logo-text">O-KAR</div>
+    </div>
+    <div class="ver-tag">V2.3.0</div>
 </header>
 
 <div class="container">
+    <button id="installBtn" class="btn-install shadow" style="display:none;">📲 התקן אפליקציה על המסך</button>
+
     <div class="system-nav">
         <button class="btn-sys shadow-sm" onclick="exportData()">📤 גיבוי</button>
         <button class="btn-sys shadow-sm" style="position:relative;">
@@ -63,17 +66,53 @@
 </div>
 
 <footer>
-    © 2026 O-KAR - Alexei Zavodisker | V2.2.0
+    © 2026 O-KAR - Alexei Zavodisker
 </footer>
 
 <script>
-    const VERSION = "2.2.0";
-    let db = JSON.parse(localStorage.getItem('okar_db_v22')) || [];
-    let currentFilter = 'all';
+    const VERSION = "2.3.0";
+    
+    // נתוני דוגמה להצגה ראשונית
+    const demoData = [
+        {
+            id: 1, n: "סכין הישרדות 'ערבה'", p: "1200", c: "שטח", 
+            m: "פלדת D2, ידית מיקרטה שחורה", d: "סכין חזקה לעבודות שטח קשות, כולל השחזת גרזן.", 
+            images: ["https://images.unsplash.com/photo-1574359411659-15573a27f812?auto=format&fit=crop&w=300&q=80"], sold: false
+        },
+        {
+            id: 2, n: "סכין שף סנטוקו", p: "850", c: "מטבח", 
+            m: "פלדת פחמן, ידית עץ זית", d: "איזון מושלם לחיתוך ירקות ובשר ברמה מקצועית.", 
+            images: ["https://images.unsplash.com/photo-1593414220166-085ca802cc41?auto=format&fit=crop&w=300&q=80"], sold: true
+        }
+    ];
 
-    // רישום Service Worker לעבודה אופליין
+    let db = JSON.parse(localStorage.getItem('okar_db_v23'));
+    if (!db) {
+        db = demoData; // טעינת דוגמה אם המאגר ריק
+        localStorage.setItem('okar_db_v23', JSON.stringify(db));
+    }
+
+    let currentFilter = 'all';
+    let deferredPrompt;
+
+    // ניהול התקנת אפליקציה
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        document.getElementById('installBtn').style.display = 'block';
+    });
+
+    document.getElementById('installBtn').addEventListener('click', async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') document.getElementById('installBtn').style.display = 'none';
+            deferredPrompt = null;
+        }
+    });
+
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js').catch(err => console.log("SW error", err));
+        navigator.serviceWorker.register('sw.js');
     }
 
     function save() {
@@ -98,7 +137,7 @@
                 r.readAsDataURL(file);
             }));
             Promise.all(readers).then(images => {
-                db.unshift({ id: Date.now(), n, p, c, m: document.getElementById('mat').value, d: document.getElementById('desc').value, images, sold: false });
+                db.unshift({ id: Date.now(), n, p, c, m: document.getElementById('mat').value, d: document.getElementById('desc').value, images: images.length ? images : ["https://via.placeholder.com/300?text=No+Image"], sold: false });
                 updateDB(); resetForm();
             });
         }
@@ -112,7 +151,7 @@
 
         listDiv.innerHTML = filtered.map(i => `
             <div class="item-card shadow ${i.sold ? 'is-sold' : ''}">
-                <div class="slider">${i.images.map(s => `<img src="${s}">`).join('') || '<div class="no-img">אין תמונות</div>'}</div>
+                <div class="slider">${i.images.map(s => `<img src="${s}">`).join('')}</div>
                 <div class="item-body">
                     <div class="tag">${i.c}</div>
                     <div class="item-head"><b>${i.n}</b></div>
@@ -160,7 +199,7 @@
         window.open(`https://wa.me/?text=${encodeURIComponent('*O-Kar*\nדגם: ' + n + '\nמחיר: ' + p + '₪')}`);
     }
 
-    function updateDB() { localStorage.setItem('okar_db_v22', JSON.stringify(db)); render(); }
+    function updateDB() { localStorage.setItem('okar_db_v23', JSON.stringify(db)); render(); }
     function resetForm() {
         ['editId','name','mat','price','desc','imgs'].forEach(id => document.getElementById(id).value = '');
         document.getElementById('formTitle').innerText = "הוספת פריט חדש";
