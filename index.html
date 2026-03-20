@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>O-Kar Custom Blades | V4.7.0</title>
-    <link rel="stylesheet" href="style.css?v=4.7.0">
-    <link rel="manifest" href="manifest.json?v=4.7.0">
+    <title>O-Kar Custom Blades | V4.4.0</title>
+    <link rel="stylesheet" href="style.css?v=4.4.0">
+    <link rel="manifest" href="manifest.json?v=4.4.0">
     <link rel="icon" href="logo.png">
 </head>
 <body onload="initApp()">
@@ -40,19 +40,21 @@
             <h2 id="formTitle">פרטי מוצר</h2>
         </div>
         <div class="form-content-wrapper">
-            <div class="form-body">
+            <div class="form-card shadow">
                 <input type="hidden" id="editId">
-                <div class="input-group"><label>שם הדגם</label><input type="text" id="name"></div>
-                <div class="input-group"><label>מחיר (₪)</label><input type="number" id="price"></div>
-                <div class="input-group"><label>חומרים</label><input type="text" id="mat"></div>
-                <div class="input-group"><label>תיאור</label><textarea id="desc" rows="3"></textarea></div>
+                <div class="input-group"><label>שם הדגם</label><input type="text" id="name" placeholder="שם הסכין"></div>
+                <div class="input-group"><label>מחיר (₪)</label><input type="number" id="price" placeholder="0.00"></div>
+                <div class="input-group"><label>חומרים</label><input type="text" id="mat" placeholder="פלדה, עץ..."></div>
+                <div class="input-group"><label>תיאור</label><textarea id="desc" rows="3" placeholder="פירוט נוסף..."></textarea></div>
+                
                 <div class="file-area shadow">
-                    <p>📸 תמונות מוצר</p>
+                    <p>📸 הוספת תמונות (מצלמה או גלריה)</p>
                     <input type="file" id="imgs" multiple accept="image/*">
-                    <div id="loader" style="display:none; color:red; font-weight:bold; margin-top:5px;">מעבד תמונות... נא להמתין</div>
+                    <div id="loader" style="display:none; color:var(--accent); font-weight:bold; margin-top:10px;">⌛ מעבד תמונות כבדות... נא להמתין</div>
                 </div>
-                <button id="saveBtn" class="btn-save-final shadow" onclick="save()">שמור ופרסם</button>
-                <button id="deleteBtn" class="btn-delete" style="display:none;" onclick="deleteProduct()">🗑️ מחק מוצר</button>
+
+                <button id="saveBtn" class="btn-save-final shadow" onclick="save()">שמור ופרסם קטלוג</button>
+                <button id="deleteBtn" class="btn-delete" style="display:none;" onclick="deleteProduct()">🗑️ מחק מוצר לצמיתות</button>
             </div>
         </div>
     </div>
@@ -83,22 +85,23 @@
     function setupPWA() {
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault(); deferredPrompt = e;
-            document.getElementById('pwaBtn').style.backgroundColor = "#2ecc71";
-            document.getElementById('pwaBtn').style.color = "white";
+            const pwaBtn = document.getElementById('pwaBtn');
+            pwaBtn.style.backgroundColor = "#2ecc71";
+            pwaBtn.style.color = "white";
         });
 
         document.getElementById('pwaBtn').addEventListener('click', async () => {
             if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt = null; }
-            else { alert("להתקנה: בתפריט הדפדפן לחץ על 'הוספה למסך הבית'"); }
+            else { alert("להתקנה: לחץ על 'הוספה למסך הבית' בתפריט הדפדפן"); }
         });
 
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js?v=4.7.0').then(reg => {
+            navigator.serviceWorker.register('./sw.js?v=4.4.0').then(reg => {
                 reg.onupdatefound = () => {
                     const sw = reg.installing;
                     sw.onstatechange = () => {
                         if (sw.state === 'installed' && navigator.serviceWorker.controller) {
-                            if(confirm("גרסה חדשה מוכנה! לעדכן עכשיו?")) location.reload();
+                            if(confirm("גרסה 4.4.0 מוכנה! לעדכן עכשיו?")) location.reload();
                         }
                     };
                 };
@@ -127,10 +130,10 @@
 
     async function save() {
         const n = document.getElementById('name').value, p = document.getElementById('price').value, id = document.getElementById('editId').value;
-        if(!n || !p) return alert("חובה שם ומחיר");
+        if(!n || !p) return alert("חובה למלא שם ומחיר");
         
         const btn = document.getElementById('saveBtn');
-        btn.disabled = true; btn.innerText = "שומר...";
+        btn.disabled = true; btn.innerText = "מעבד...";
 
         const files = document.getElementById('imgs').files;
         let images = [];
@@ -180,9 +183,10 @@
             <div class="m-details">
                 <h2>${i.n}</h2><p class="m-price">₪${i.p}</p>
                 <div class="m-specs shadow"><p><strong>חומרים:</strong> ${i.m || '-'}</p><p>${i.d || '-'}</p></div>
-                <button class="btn-wa-big shadow" onclick="contactSeller('${i.n.replace(/'/g, "\\'")}', '${i.p}', ${i.id})">💬 צור קשר לרכישה</button>
+                <button class="btn-wa-big shadow" onclick="contactSeller('${i.n.replace(/'/g, "\\'")}', '${i.p}', ${i.id})">💬 צור קשר בוואצאפ</button>
             </div>`;
         document.getElementById('viewModal').style.display = "block";
+        document.body.classList.add('no-scroll');
     }
 
     function contactSeller(n, p, id) {
@@ -197,15 +201,16 @@
         document.getElementById('price').value = i.p;
         document.getElementById('mat').value = i.m;
         document.getElementById('desc').value = i.d;
-        document.getElementById('formTitle').innerText = "עריכה";
+        document.getElementById('formTitle').innerText = "עריכת מוצר";
         document.getElementById('deleteBtn').style.display = 'block';
         document.getElementById('formModal').style.display = 'block';
+        document.body.classList.add('no-scroll');
     }
 
     function toggleSold(id) { const idx = db.findIndex(x => x.id == id); db[idx].sold = !db[idx].sold; localStorage.setItem(DB_NAME, JSON.stringify(db)); render(); }
     function deleteProduct() { if(confirm("למחוק סופית?")) { db = db.filter(x => x.id != document.getElementById('editId').value); localStorage.setItem(DB_NAME, JSON.stringify(db)); render(); goHome(); } }
     function goHome() { window.history.replaceState({}, '', window.location.href.split('?')[0]); document.querySelectorAll('.full-modal').forEach(m => m.style.display = 'none'); document.body.classList.remove('no-scroll'); }
-    function toggleForm() { resetForm(); document.getElementById('deleteBtn').style.display = 'none'; document.getElementById('formModal').style.display = 'block'; }
+    function toggleForm() { resetForm(); document.getElementById('deleteBtn').style.display = 'none'; document.getElementById('formModal').style.display = 'block'; document.body.classList.add('no-scroll'); }
     function resetForm() { ['editId','name','mat','price','desc','imgs'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; }); }
     function exportData() { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(db)], {type: "application/json"})); a.download = "okar_backup.json"; a.click(); }
     function importData(e) { const r = new FileReader(); r.onload = ev => { db = JSON.parse(ev.target.result); localStorage.setItem(DB_NAME, JSON.stringify(db)); render(); }; r.readAsText(e.target.files[0]); }
