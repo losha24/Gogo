@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>O-Kar Custom Blades | V5.3.2</title>
-    <link rel="stylesheet" href="style.css?v=5.3.2">
-    <link rel="manifest" href="manifest.json?v=5.3.2">
+    <title>O-Kar Custom Blades | V5.3.3</title>
+    <link rel="stylesheet" href="style.css?v=5.3.3">
+    <link rel="manifest" href="manifest.json?v=5.3.3">
     <link rel="icon" href="logo.png">
 </head>
 <body onload="initApp()">
@@ -38,16 +38,19 @@
         <div class="form-content-wrapper">
             <div class="form-card shadow" style="padding:20px;">
                 <div class="input-group"><label>שינוי סיסמת מנהל</label><input type="password" id="newPass"></div>
-                <div class="input-group"><label>טלפון לוואצאפ (ללא מקפים)</label><input type="text" id="newPhone"></div>
+                <div class="input-group"><label>טלפון לוואצאפ (972...)</label><input type="text" id="newPhone"></div>
                 <button class="btn-save-final shadow" onclick="saveSettings()">שמור הגדרות בענן</button>
                 <hr style="margin:20px 0;">
-                <p style="font-weight:bold; font-size:0.9rem;">גיבוי נתונים ידני:</p>
+                <p style="font-weight:bold; font-size:0.9rem;">תחזוקה וגיבוי:</p>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                     <button class="nav-btn" onclick="exportToJSON()" style="max-width:none;">📥 ייצוא</button>
                     <button class="nav-btn" onclick="document.getElementById('importFile').click()" style="max-width:none;">📤 ייבוא</button>
                     <input type="file" id="importFile" style="display:none" onchange="importFromJSON(event)">
                 </div>
-                <button class="btn-delete" onclick="logoutAdmin()">התנתק ממצב עריכה</button>
+                <button class="nav-btn" onclick="checkDatabaseSize()" style="max-width:none; margin-top:10px; background:#f1c40f; color:#000;">🔍 בדיקת נפח תמונות</button>
+                <div id="sizeReport" style="font-size:0.8rem; margin-top:10px; display:none; background:#f9f9f9; padding:10px; border-radius:8px; border:1px solid #ddd; line-height:1.4;"></div>
+                
+                <button class="btn-delete" style="margin-top:20px;" onclick="logoutAdmin()">התנתק ממצב עריכה</button>
             </div>
         </div>
     </div>
@@ -64,7 +67,7 @@
                 <div class="file-area shadow">
                     <p>📸 תמונות</p>
                     <input type="file" id="imgs" multiple accept="image/*">
-                    <div id="loader" style="display:none; color:red; font-weight:bold; margin-top:10px;">⌛ שומר נתונים...</div>
+                    <div id="loader" style="display:none; color:red; font-weight:bold; margin-top:10px;">⌛ שומר נתונים בענן...</div>
                 </div>
                 <button id="saveBtn" class="btn-save-final shadow" onclick="save()">שמור בענן</button>
                 <button id="deleteBtn" class="btn-delete" style="display:none;" onclick="deleteProduct()">🗑️ מחק מוצר מהענן</button>
@@ -82,7 +85,7 @@
 
 <footer class="main-footer">
     <p>© 2026 O-Kar Custom Blades</p>
-    <p>גרסת מערכת תקינה: <strong>5.3.2</strong></p>
+    <p>גרסת מערכת: <strong>5.3.3</strong></p>
 </footer>
 
 <script>
@@ -106,12 +109,9 @@
             const data = await res.json();
             if (data) {
                 if (data.pass) ADMIN_PASS = data.pass;
-                if (data.phone) { 
-                    MY_PHONE = data.phone;
-                    document.getElementById('newPhone').value = data.phone;
-                }
+                if (data.phone) MY_PHONE = data.phone;
             }
-        } catch(e) { console.error("Settings Error", e); }
+        } catch(e) { console.error("Settings error", e); }
     }
 
     async function fetchData() {
@@ -120,13 +120,13 @@
             const data = await res.json();
             db = data ? Object.values(data) : [];
             render();
-        } catch(e) { console.error("Fetch Error", e); }
+        } catch(e) { console.error("Fetch error", e); }
     }
 
     function render() {
         const list = document.getElementById('list');
         if(db.length === 0) {
-            list.innerHTML = "<p style='grid-column:1/-1; text-align:center; padding:50px;'>המערכת ריקה. השתמש בניהול להוספת פריטים.</p>";
+            list.innerHTML = "<p style='grid-column:1/-1; text-align:center; padding:50px;'>המערכת ריקה.</p>";
         } else {
             list.innerHTML = db.map(i => `
                 <div class="item-card shadow ${i.sold ? 'is-sold' : ''}">
@@ -182,6 +182,26 @@
         goHome();
     }
 
+    async function checkDatabaseSize() {
+        const reportDiv = document.getElementById('sizeReport');
+        reportDiv.style.display = 'block';
+        reportDiv.innerHTML = "⌛ מחשב נפח...";
+        let totalSize = 0; let heavyItems = [];
+
+        db.forEach(item => {
+            const sizeKB = (JSON.stringify(item).length / 1024).toFixed(2);
+            totalSize += parseFloat(sizeKB);
+            if (parseFloat(sizeKB) > 500) heavyItems.push({ name: item.n, size: sizeKB });
+        });
+
+        let html = `<b>נפח כולל בענן:</b> ${(totalSize / 1024).toFixed(2)} MB<br>`;
+        if (heavyItems.length > 0) {
+            html += `<span style="color:red;">⚠️ ${heavyItems.length} פריטים כבדים:</span><br>`;
+            heavyItems.forEach(h => html += `- ${h.name} (${h.size} KB)<br>`);
+        } else { html += `<span style="color:green;">✅ כל התמונות קלות ומותאמות!</span>`; }
+        reportDiv.innerHTML = html;
+    }
+
     function editItem(id) {
         const i = db.find(x => x.id == id);
         document.getElementById('editId').value = i.id;
@@ -189,7 +209,7 @@
         document.getElementById('price').value = i.p;
         document.getElementById('mat').value = i.m || '';
         document.getElementById('desc').value = i.d || '';
-        document.getElementById('formTitle').innerText = "עריכת מוצר";
+        document.getElementById('formTitle').innerText = "עריכה";
         document.getElementById('deleteBtn').style.display = 'block';
         document.getElementById('formModal').style.display = 'block';
     }
@@ -201,7 +221,7 @@
     }
 
     async function deleteProduct() {
-        if(confirm("למחוק לצמיתות מהשרת?")) {
+        if(confirm("למחוק מהשרת?")) {
             await fetch(`${FB_URL}/products/${document.getElementById('editId').value}.json`, { method: 'DELETE' });
             await fetchData(); goHome();
         }
@@ -213,7 +233,7 @@
         const newSettings = { pass: p || ADMIN_PASS, phone: t || MY_PHONE };
         await fetch(`${FB_URL}/settings.json`, { method: 'PUT', body: JSON.stringify(newSettings) });
         ADMIN_PASS = newSettings.pass; MY_PHONE = newSettings.phone;
-        alert("הגדרות נשמרו!"); goHome();
+        alert("נשמר!"); goHome();
     }
 
     function viewItem(id) {
@@ -232,22 +252,22 @@
         const cleanPhone = MY_PHONE.replace(/\D/g, '');
         const finalPhone = cleanPhone.startsWith('0') ? '972' + cleanPhone.substring(1) : cleanPhone;
         const url = `${window.location.href.split('?')[0]}?id=${id}`;
-        window.open(`https://wa.me/${finalPhone}?text=${encodeURIComponent('מעוניין ב: ' + n + '\n₪' + p + '\nלינק: ' + url)}`, '_blank');
+        window.open(`https://wa.me/${finalPhone}?text=${encodeURIComponent('מעוניין ב: ' + n + '\nלינק: ' + url)}`, '_blank');
     }
 
     function openAdmin() {
-        if (isAdmin || prompt("סיסמת מנהל:") === ADMIN_PASS) {
+        if (isAdmin || prompt("סיסמה:") === ADMIN_PASS) {
             isAdmin = true; sessionStorage.setItem('is_admin', 'true');
             document.getElementById('addBtn').style.display = 'block';
             document.getElementById('adminModal').style.display = 'block';
             render();
-        } else { alert("שגיאה בסיסמה"); }
+        } else { alert("טעות בסיסמה"); }
     }
 
     function exportToJSON() {
         const blob = new Blob([JSON.stringify(db, null, 2)], { type: "application/json" });
         const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-        a.download = `O-Kar-Backup.json`; a.click();
+        a.download = `Backup-Okars.json`; a.click();
     }
 
     async function importFromJSON(event) {
@@ -255,7 +275,7 @@
         reader.onload = async (e) => {
             const items = JSON.parse(e.target.result);
             for (let i of items) { await fetch(`${FB_URL}/products/${i.id}.json`, { method: 'PUT', body: JSON.stringify(i) }); }
-            alert("הייבוא הושלם!"); fetchData();
+            alert("בוצע!"); fetchData();
         };
         reader.readAsText(event.target.files[0]);
     }
@@ -265,12 +285,9 @@
     function resetForm() { ['editId','name','mat','price','desc','imgs'].forEach(id => document.getElementById(id).value = ''); }
     function closeView() { goHome(); }
     function hardReset() { location.reload(true); }
-    function setupPWA() { if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=5.3.2'); }
-    function checkInstallationStatus() { 
-        const pwaBtn = document.getElementById('pwaBtn'); 
-        if (window.matchMedia('(display-mode: standalone)').matches) { pwaBtn.style.background = "#e63946"; pwaBtn.innerText = "מותקן ✅"; }
-    }
-    function handleInstallClick() { alert("השתמש בתפריט הדפדפן להתקנה"); }
+    function setupPWA() { if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=5.3.3'); }
+    function checkInstallationStatus() { if (window.matchMedia('(display-mode: standalone)').matches) { const b = document.getElementById('pwaBtn'); b.style.background = "#e63946"; b.innerText = "מותקן ✅"; } }
+    function handleInstallClick() { alert("השתמש בתפריט הדפדפן להתקנה (הוסף למסך הבית)"); }
     function logoutAdmin() { isAdmin = false; sessionStorage.setItem('is_admin', 'false'); document.getElementById('addBtn').style.display = 'none'; goHome(); render(); }
 </script>
 </body>
