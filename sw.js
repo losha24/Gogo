@@ -1,4 +1,4 @@
-const CACHE_NAME = 'okar-v4.7.0';
+const CACHE_NAME = 'okar-v4.4.0';
 const ASSETS = ['./', './index.html', './style.css', './manifest.json', './logo.png'];
 
 self.addEventListener('install', e => {
