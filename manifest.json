@@ -1,5 +1,5 @@
 {
-  "short_name": "O-Kar",
+  "short_name": "O-KAR",
   "name": "O-Kar Custom Blades",
   "description": "גלריית סכינים בעבודת יד מבית אולג זבודיסקר",
   "icons": [
@@ -15,7 +15,7 @@
       "type": "image/png"
     }
   ],
-  "start_url": "./index.html",
+  "start_url": "./index.html?v=4.5.0",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#111111",
