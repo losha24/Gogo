@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>O-Kar Custom Blades | V4.4.0</title>
+    <title>O-Kar Custom Blades | V4.4.1</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="logo.png">
@@ -40,18 +40,31 @@
             <h2 id="formTitle">פרטי מוצר</h2>
         </div>
         <div class="form-content-wrapper">
-            <div class="form-body">
+            <div class="form-card shadow">
                 <input type="hidden" id="editId">
-                <div class="input-group"><label>שם הדגם</label><input type="text" id="name"></div>
-                <div class="input-group"><label>מחיר (₪)</label><input type="number" id="price"></div>
-                <div class="input-group"><label>חומרים</label><input type="text" id="mat"></div>
-                <div class="input-group"><label>תיאור</label><textarea id="desc" rows="3"></textarea></div>
-                <div class="file-area shadow">
-                    <p>📸 תמונות מוצר</p>
-                    <input type="file" id="imgs" multiple accept="image/*">
+                <div class="input-group">
+                    <label>שם הדגם</label>
+                    <input type="text" id="name" placeholder="לדוגמה: סכין צייד דגם A">
                 </div>
-                <button id="saveBtn" class="btn-save-final shadow" onclick="save()">שמור ופרסם</button>
-                <button id="deleteBtn" class="btn-delete" style="display:none;" onclick="deleteProduct()">🗑️ מחק מוצר</button>
+                <div class="input-group">
+                    <label>מחיר (₪)</label>
+                    <input type="number" id="price" placeholder="0.00">
+                </div>
+                <div class="input-group">
+                    <label>חומרים</label>
+                    <input type="text" id="mat" placeholder="סוג פלדה, עץ לידית...">
+                </div>
+                <div class="input-group">
+                    <label>תיאור המוצר</label>
+                    <textarea id="desc" rows="4" placeholder="פירוט חופשי על הסכין..."></textarea>
+                </div>
+                <div class="file-area shadow">
+                    <p>📸 הוספת תמונות מהגלריה או מצלמה</p>
+                    <input type="file" id="imgs" multiple accept="image/*">
+                    <small>המערכת תכווץ את התמונות אוטומטית</small>
+                </div>
+                <button id="saveBtn" class="btn-save-final shadow" onclick="save()">שמור ופרסם קטלוג</button>
+                <button id="deleteBtn" class="btn-delete" style="display:none;" onclick="deleteProduct()">🗑️ מחק מוצר לצמיתות</button>
             </div>
         </div>
     </div>
@@ -72,8 +85,6 @@
     </div>
 </div>
 
-<footer>O-KAR Custom Blades | V4.4.0</footer>
-
 <script>
     const DB_NAME = 'okar_database_final';
     const MY_PHONE = "0524704226";
@@ -89,20 +100,19 @@
         if (urlParams.get('id')) setTimeout(() => viewItem(urlParams.get('id')), 500);
     }
 
-    // תיקון כפתור התקנה - האזנה לאירוע התקנה
     function setupPWA() {
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
             const pwaBtn = document.getElementById('pwaBtn');
-            pwaBtn.style.backgroundColor = "#2ecc71"; // צבע ירוק כשהתקנה זמינה
+            pwaBtn.style.backgroundColor = "#2ecc71";
             pwaBtn.style.color = "white";
         });
 
         document.getElementById('pwaBtn').addEventListener('click', async () => {
             if (deferredPrompt) {
                 deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
+                await deferredPrompt.userChoice;
                 deferredPrompt = null;
             } else {
                 document.getElementById('installGuide').style.display = 'flex';
@@ -170,15 +180,13 @@
                     <div class="title">${i.n}</div>
                     <div class="price">₪${i.p}</div>
                     <div class="item-btns">
-                        <button class="btn-i" onclick="contactSeller('${i.n}', '${i.p}', ${i.id})">💬</button>
+                        <button class="btn-i" onclick="contactSeller('${i.n.replace(/'/g, "\\'")}', '${i.p}', ${i.id})">💬</button>
                         <button class="btn-i" onclick="editItem(${i.id})">✏️</button>
                         <button class="btn-i" onclick="toggleSold(${i.id})">${i.sold ? '🛒' : '✅'}</button>
                     </div>
                 </div>
             </div>
         `).join('');
-        
-        // עדכון סטטיסטיקה משולשת
         document.getElementById('totalItems').innerText = db.length;
         document.getElementById('totalSold').innerText = db.filter(i => i.sold).length;
         document.getElementById('totalInStock').innerText = db.filter(i => !i.sold).length;
@@ -191,9 +199,10 @@
             <div class="m-details">
                 <h2>${i.n}</h2><p class="m-price">₪${i.p}</p>
                 <div class="m-specs shadow"><p><strong>חומרים:</strong> ${i.m || '-'}</p><p>${i.d || '-'}</p></div>
-                <button class="btn-wa-big shadow" onclick="contactSeller('${i.n}', '${i.p}', ${i.id})">💬 צור קשר בוואצאפ</button>
+                <button class="btn-wa-big shadow" onclick="contactSeller('${i.n.replace(/'/g, "\\'")}', '${i.p}', ${i.id})">💬 צור קשר בוואצאפ</button>
             </div>`;
         document.getElementById('viewModal').style.display = "block";
+        document.body.classList.add('no-scroll');
     }
 
     function contactSeller(n, p, id) {
@@ -209,17 +218,18 @@
         document.getElementById('price').value = i.p;
         document.getElementById('mat').value = i.m;
         document.getElementById('desc').value = i.d;
-        document.getElementById('formTitle').innerText = "עריכה";
+        document.getElementById('formTitle').innerText = "עריכת מוצר";
         document.getElementById('deleteBtn').style.display = 'block';
         document.getElementById('formModal').style.display = 'block';
+        document.body.classList.add('no-scroll');
     }
 
     function deleteProduct() { if(confirm("למחוק סופית?")) { db = db.filter(x => x.id != document.getElementById('editId').value); updateDB(); goHome(); } }
     function toggleSold(id) { const idx = db.findIndex(x => x.id == id); db[idx].sold = !db[idx].sold; updateDB(); }
     function updateDB() { localStorage.setItem(DB_NAME, JSON.stringify(db)); render(); }
     function goHome() { window.history.replaceState({}, '', window.location.href.split('?')[0]); document.querySelectorAll('.full-modal').forEach(m => m.style.display = 'none'); document.body.classList.remove('no-scroll'); }
-    function toggleForm() { resetForm(); document.getElementById('deleteBtn').style.display = 'none'; document.getElementById('formModal').style.display = 'block'; }
-    function resetForm() { ['editId','name','mat','price','desc','imgs'].forEach(id => document.getElementById(id).value = ''); }
+    function toggleForm() { resetForm(); document.getElementById('deleteBtn').style.display = 'none'; document.getElementById('formTitle').innerText = "הוספת מוצר"; document.getElementById('formModal').style.display = 'block'; document.body.classList.add('no-scroll'); }
+    function resetForm() { ['editId','name','mat','price','desc','imgs'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value = ''; }); }
     function exportData() {
         const a = document.createElement('a');
         a.href = URL.createObjectURL(new Blob([JSON.stringify(db)], {type: "application/json"}));
