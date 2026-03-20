@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>O-Kar Custom Blades | V5.0.0</title>
-    <link rel="stylesheet" href="style.css?v=5.0.0">
-    <link rel="manifest" href="manifest.json?v=5.0.0">
+    <title>O-Kar Custom Blades | V5.2.0</title>
+    <link rel="stylesheet" href="style.css?v=5.2.0">
+    <link rel="manifest" href="manifest.json?v=5.2.0">
     <link rel="icon" href="logo.png">
 </head>
 <body onload="initApp()">
@@ -16,7 +16,7 @@
     </div>
     <div class="header-controls">
         <button class="nav-btn home-btn" onclick="goHome()">🏠 בית</button>
-        <button id="pwaBtn" class="nav-btn">📲 התקנה</button>
+        <button id="pwaBtn" class="nav-btn" onclick="handleInstallClick()">📲 התקנה</button>
         <button class="nav-btn" onclick="openAdmin()">⚙️ ניהול</button>
         <button class="nav-btn" onclick="hardReset()">🔄 עדכון</button>
     </div>
@@ -34,17 +34,32 @@
     </div>
 
     <div id="adminModal" class="full-modal" style="display:none;">
-        <div class="form-header-bar">
-            <button class="back-btn" onclick="goHome()">➜ סגור</button>
-            <h2>הגדרות ניהול</h2>
-        </div>
+        <div class="form-header-bar"><button class="back-btn" onclick="goHome()">➜ סגור</button><h2>הגדרות ניהול</h2></div>
         <div class="form-content-wrapper">
-            <div class="form-card shadow">
-                <div class="input-group"><label>סיסמת מנהל חדשה</label><input type="password" id="newPass" placeholder="השאר ריק ללא שינוי"></div>
-                <div class="input-group"><label>טלפון לוואצאפ (972...)</label><input type="text" id="newPhone" placeholder="למשל: 0524704226"></div>
+            <div class="form-card shadow" style="padding:20px;">
+                <div class="input-group"><label>סיסמת מנהל חדשה</label><input type="password" id="newPass"></div>
+                <div class="input-group"><label>טלפון לוואצאפ (972...)</label><input type="text" id="newPhone"></div>
                 <button class="btn-save-final shadow" onclick="saveSettings()">שמור הגדרות</button>
+                <hr style="margin:20px 0;">
+                <p style="font-weight:bold; font-size:0.9rem;">ניהול גיבוי נתונים:</p>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <button class="nav-btn" onclick="exportToJSON()" style="max-width:none;">📥 ייצוא קובץ</button>
+                    <button class="nav-btn" onclick="document.getElementById('importFile').click()" style="max-width:none;">📤 ייבוא קובץ</button>
+                    <input type="file" id="importFile" style="display:none" onchange="importFromJSON(event)">
+                </div>
                 <button class="btn-delete" onclick="logoutAdmin()">התנתק ממצב עריכה</button>
             </div>
+        </div>
+    </div>
+
+    <div id="installInstructions" class="full-modal" style="display:none; background: rgba(0,0,0,0.85); z-index: 3000;">
+        <div class="form-card shadow" style="margin: 20% auto; width: 85%; text-align: center; padding: 30px; background:white; border-radius:20px;">
+            <h3>איך להתקין את האפליקציה?</h3>
+            <div style="text-align: right; margin: 20px 0; line-height: 1.6;">
+                <p><strong>באייפון (Safari):</strong><br>לחץ על כפתור השיתוף [⎋] בתחתית המסך, וגלול מטה ל-"הוסף למסך הבית".</p>
+                <p><strong>באנדרואיד (Chrome):</strong><br>לחץ על 3 הנקודות בפינה למעלה ובחר ב-"התקן אפליקציה".</p>
+            </div>
+            <button class="btn-save-final" onclick="goHome()">הבנתי, תודה</button>
         </div>
     </div>
 
@@ -60,7 +75,7 @@
                 <div class="file-area shadow">
                     <p>📸 תמונות</p>
                     <input type="file" id="imgs" multiple accept="image/*">
-                    <div id="loader" style="display:none; color:red; font-weight:bold; margin-top:10px;">⌛ מעלה לענן... נא להמתין</div>
+                    <div id="loader" style="display:none; color:red; font-weight:bold; margin-top:10px;">⌛ מעלה לענן...</div>
                 </div>
                 <button id="saveBtn" class="btn-save-final shadow" onclick="save()">שמור בענן</button>
                 <button id="deleteBtn" class="btn-delete" style="display:none;" onclick="deleteProduct()">🗑️ מחק מוצר</button>
@@ -78,19 +93,20 @@
 
 <footer class="main-footer">
     <p>© 2026 O-Kar Custom Blades | אולג זבודיסקר</p>
-    <p>גרסת ענן: <strong>5.0.0</strong></p>
+    <p>גרסת ענן: <strong>5.2.0</strong></p>
 </footer>
 
 <script>
-    // הכתובת שלך הוטמעה כאן
     const FB_URL = "https://o-kar-blades-default-rtdb.europe-west1.firebasedatabase.app"; 
     let ADMIN_PASS = localStorage.getItem('okar_pass') || "1234";
     let MY_PHONE = localStorage.getItem('okar_phone') || "0524704226";
     let isAdmin = sessionStorage.getItem('is_admin') === 'true';
+    let deferredPrompt;
     let db = [];
 
     async function initApp() {
         if(isAdmin) document.getElementById('addBtn').style.display = 'block';
+        checkInstallationStatus();
         fetchData();
         setupPWA();
     }
@@ -99,39 +115,51 @@
         try {
             const res = await fetch(`${FB_URL}/products.json`);
             const data = await res.json();
-            // הפיכת האובייקט מהענן למערך
             db = data ? Object.values(data) : [];
             render();
-        } catch(e) { console.error("Database Error", e); }
+        } catch(e) { console.error("Error fetching", e); }
     }
 
-    function checkAuth() {
-        if (isAdmin) return true;
-        const p = prompt("נא להזין סיסמת מנהל לביצוע שינויים:");
-        if (p === ADMIN_PASS) {
+    function checkInstallationStatus() {
+        const pwaBtn = document.getElementById('pwaBtn');
+        if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+            pwaBtn.style.background = "#e63946"; 
+            pwaBtn.style.color = "white";
+            pwaBtn.innerText = "מותקן ✅";
+        }
+    }
+
+    function handleInstallClick() {
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            alert("האפליקציה כבר מותקנת!");
+        } else if (deferredPrompt) {
+            deferredPrompt.prompt();
+        } else {
+            document.getElementById('installInstructions').style.display = 'block';
+        }
+    }
+
+    function openAdmin() {
+        if (isAdmin || prompt("סיסמת מנהל:") === ADMIN_PASS) {
             isAdmin = true;
             sessionStorage.setItem('is_admin', 'true');
             document.getElementById('addBtn').style.display = 'block';
+            document.getElementById('adminModal').style.display = 'block';
             render();
-            return true;
-        }
-        alert("סיסמה שגויה"); return false;
+        } else { alert("סיסמה שגויה"); }
     }
 
-    function openAdmin() { if(checkAuth()) document.getElementById('adminModal').style.display = 'block'; }
-    function logoutAdmin() { isAdmin = false; sessionStorage.setItem('is_admin', 'false'); document.getElementById('addBtn').style.display = 'none'; goHome(); render(); }
-    
     function saveSettings() {
         const p = document.getElementById('newPass').value;
         const t = document.getElementById('newPhone').value;
         if(p) { ADMIN_PASS = p; localStorage.setItem('okar_pass', p); }
         if(t) { MY_PHONE = t; localStorage.setItem('okar_phone', t); }
-        alert("ההגדרות עודכנו בהצלחה"); goHome();
+        alert("נשמר בהצלחה"); goHome();
     }
 
     async function save() {
         const n = document.getElementById('name').value, p = document.getElementById('price').value, id = document.getElementById('editId').value;
-        if(!n || !p) return alert("חובה למלא שם ומחיר");
+        if(!n || !p) return alert("שם ומחיר חובה");
         const btn = document.getElementById('saveBtn');
         btn.disabled = true; document.getElementById('loader').style.display='block';
 
@@ -165,7 +193,7 @@
     }
 
     async function deleteProduct() {
-        if(confirm("למחוק לצמיתות מהענן?")) {
+        if(confirm("למחוק מהענן?")) {
             await fetch(`${FB_URL}/products/${document.getElementById('editId').value}.json`, { method: 'DELETE' });
             await fetchData(); goHome();
         }
@@ -173,35 +201,55 @@
 
     async function toggleSold(id) {
         const i = db.find(x => x.id == id);
-        if(!i) return;
-        const newState = !i.sold;
-        await fetch(`${FB_URL}/products/${id}.json`, { method: 'PATCH', body: JSON.stringify({sold: newState}) });
+        await fetch(`${FB_URL}/products/${id}.json`, { method: 'PATCH', body: JSON.stringify({sold: !i.sold}) });
         fetchData();
+    }
+
+    function exportToJSON() {
+        const blob = new Blob([JSON.stringify(db, null, 2)], { type: "application/json" });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `O-Kar-Backup-${new Date().toLocaleDateString()}.json`;
+        a.click();
+    }
+
+    async function importFromJSON(event) {
+        if (!confirm("זה יחליף את הנתונים בענן. להמשיך?")) return;
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            const items = JSON.parse(e.target.result);
+            for (let i of items) { await fetch(`${FB_URL}/products/${i.id}.json`, { method: 'PUT', body: JSON.stringify(i) }); }
+            alert("הייבוא הושלם!"); fetchData();
+        };
+        reader.readAsText(event.target.files[0]);
     }
 
     function render() {
         const list = document.getElementById('list');
-        list.innerHTML = db.map(i => `
-            <div class="item-card shadow ${i.sold ? 'is-sold' : ''}">
-                <div class="card-img" onclick="viewItem(${i.id})"><img src="${i.images[0]}" loading="lazy"></div>
-                <div class="item-info">
-                    <div class="title">${i.n}</div>
-                    <div class="price">₪${i.p}</div>
-                    <div class="item-btns">
-                        <button class="btn-i" onclick="contactSeller('${i.n.replace(/'/g, "\\'")}', '${i.p}', ${i.id})">💬</button>
-                        ${isAdmin ? `<button class="btn-i" onclick="editItem(${i.id})">✏️</button>` : ''}
-                        ${isAdmin ? `<button class="btn-i" onclick="toggleSold(${i.id})">${i.sold ? '🛒' : '✅'}</button>` : ''}
+        if(db.length === 0) {
+            list.innerHTML = "<p style='grid-column:1/-1; text-align:center; padding:50px;'>המערכת ריקה. היכנס לניהול להוספת מוצרים.</p>";
+        } else {
+            list.innerHTML = db.map(i => `
+                <div class="item-card shadow ${i.sold ? 'is-sold' : ''}">
+                    <div class="card-img" onclick="viewItem(${i.id})"><img src="${i.images[0]}" loading="lazy"></div>
+                    <div class="item-info">
+                        <div class="title">${i.n}</div><div class="price">₪${i.p}</div>
+                        <div class="item-btns">
+                            <button class="btn-i" onclick="contactSeller('${i.n.replace(/'/g, "\\'")}', '${i.p}', ${i.id})">💬</button>
+                            ${isAdmin ? `<button class="btn-i" onclick="editItem(${i.id})">✏️</button>` : ''}
+                            ${isAdmin ? `<button class="btn-i" onclick="toggleSold(${i.id})">${i.sold ? '🛒' : '✅'}</button>` : ''}
+                        </div>
                     </div>
                 </div>
-            </div>
-        `).join('');
+            `).join('');
+        }
         document.getElementById('totalItems').innerText = db.length;
         document.getElementById('totalSold').innerText = db.filter(i => i.sold).length;
         document.getElementById('totalInStock').innerText = db.filter(i => !i.sold).length;
     }
 
     function viewItem(id) {
-        const i = db.find(x => x.id == id); if(!i) return;
+        const i = db.find(x => x.id == id);
         document.getElementById('modalContent').innerHTML = `
             <div class="m-slider">${i.images.map(s => `<img src="${s}">`).join('')}</div>
             <div class="m-details">
@@ -215,28 +263,27 @@
 
     function contactSeller(n, p, id) {
         const url = `${window.location.href.split('?')[0]}?id=${id}`;
-        window.open(`https://wa.me/972${MY_PHONE.substring(1)}?text=${encodeURIComponent('היי אולג, אני מעוניין במוצר: ' + n + '\nלינק: ' + url)}`, '_blank');
+        window.open(`https://wa.me/972${MY_PHONE.substring(1)}?text=${encodeURIComponent('מעוניין ב: ' + n + '\nלינק: ' + url)}`, '_blank');
     }
 
     function editItem(id) {
         const i = db.find(x => x.id == id);
-        document.getElementById('editId').value = i.id;
-        document.getElementById('name').value = i.n;
-        document.getElementById('price').value = i.p;
-        document.getElementById('mat').value = i.m;
-        document.getElementById('desc').value = i.d;
-        document.getElementById('formTitle').innerText = "עריכת מוצר";
-        document.getElementById('deleteBtn').style.display = 'block';
+        ['editId','name','price','mat','desc'].forEach(f => document.getElementById(f).value = i[f === 'n' ? 'n' : f === 'p' ? 'p' : f === 'm' ? 'm' : f === 'd' ? 'd' : 'id'] || i[f] || '');
+        document.getElementById('editId').value = i.id; document.getElementById('name').value = i.n; document.getElementById('price').value = i.p;
+        document.getElementById('formTitle').innerText = "עריכה"; document.getElementById('deleteBtn').style.display = 'block';
         document.getElementById('formModal').style.display = 'block';
-        document.body.style.overflow = 'hidden';
     }
 
     function goHome() { document.querySelectorAll('.full-modal').forEach(m => m.style.display = 'none'); document.body.style.overflow = 'auto'; }
-    function toggleForm() { resetForm(); document.getElementById('deleteBtn').style.display = 'none'; document.getElementById('formModal').style.display = 'block'; document.body.style.overflow = 'hidden'; }
-    function resetForm() { ['editId','name','mat','price','desc','imgs'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; }); }
+    function toggleForm() { resetForm(); document.getElementById('deleteBtn').style.display = 'none'; document.getElementById('formModal').style.display = 'block'; }
+    function resetForm() { ['editId','name','mat','price','desc','imgs'].forEach(id => document.getElementById(id).value = ''); }
     function closeView() { goHome(); }
     function hardReset() { location.reload(true); }
-    function setupPWA() { if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js?v=5.0.0'); } }
+    function setupPWA() { 
+        if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=5.2.0');
+        window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredPrompt = e; });
+    }
+    function logoutAdmin() { isAdmin = false; sessionStorage.setItem('is_admin', 'false'); document.getElementById('addBtn').style.display = 'none'; goHome(); render(); }
 </script>
 </body>
 </html>
