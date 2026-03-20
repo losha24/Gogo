@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>O-Kar Custom Blades | V4.5.0</title>
-    <link rel="stylesheet" href="style.css?v=4.5.0">
-    <link rel="manifest" href="manifest.json?v=4.5.0">
+    <title>O-Kar Custom Blades | V4.6.0</title>
+    <link rel="stylesheet" href="style.css?v=4.6.0">
+    <link rel="manifest" href="manifest.json?v=4.6.0">
     <link rel="icon" href="logo.png">
 </head>
 <body onload="initApp()">
@@ -42,14 +42,17 @@
         <div class="form-content-wrapper">
             <div class="form-card shadow">
                 <input type="hidden" id="editId">
-                <div class="input-group"><label>שם הדגם</label><input type="text" id="name" placeholder="שם הסכין"></div>
-                <div class="input-group"><label>מחיר (₪)</label><input type="number" id="price" placeholder="מחיר"></div>
-                <div class="input-group"><label>חומרים</label><input type="text" id="mat" placeholder="פלדה, ידית..."></div>
-                <div class="input-group"><label>תיאור</label><textarea id="desc" rows="3" placeholder="פירוט נוסף..."></textarea></div>
+                <div class="input-group"><label>שם הדגם</label><input type="text" id="name"></div>
+                <div class="input-group"><label>מחיר (₪)</label><input type="number" id="price"></div>
+                <div class="input-group"><label>חומרים</label><input type="text" id="mat"></div>
+                <div class="input-group"><label>תיאור</label><textarea id="desc" rows="3"></textarea></div>
+                
                 <div class="file-area shadow">
-                    <p>📸 תמונות מוצר</p>
+                    <p>📸 תמונות מוצר (ניתן לבחור כמה)</p>
                     <input type="file" id="imgs" multiple accept="image/*">
+                    <div id="uploadStatus" style="display:none; color: var(--accent); font-weight: bold; margin-top: 10px;">⌛ מעבד תמונות... נא להמתין</div>
                 </div>
+
                 <button id="saveBtn" class="btn-save-final shadow" onclick="save()">שמור ופרסם</button>
                 <button id="deleteBtn" class="btn-delete" style="display:none;" onclick="deleteProduct()">🗑️ מחק מוצר</button>
             </div>
@@ -64,15 +67,7 @@
     <div id="modalContent"></div>
 </div>
 
-<div id="installGuide" class="modal-overlay" style="display:none;" onclick="this.style.display='none'">
-    <div class="guide-box shadow">
-        <h3>התקנה</h3>
-        <p>לחץ על שלוש הנקודות בדפדפן ובחר <b>"התקנת אפליקציה"</b> או <b>"הוספה למסך הבית"</b>.</p>
-        <button class="btn-save-final">הבנתי</button>
-    </div>
-</div>
-
-<footer>O-KAR Custom Blades | V4.5.0</footer>
+<footer id="versionTag">O-KAR Custom Blades | V4.6.0</footer>
 
 <script>
     const DB_NAME = 'okar_database_final';
@@ -91,67 +86,66 @@
 
     function setupPWA() {
         window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            const pwaBtn = document.getElementById('pwaBtn');
-            pwaBtn.style.backgroundColor = "#2ecc71";
-            pwaBtn.style.color = "white";
+            e.preventDefault(); deferredPrompt = e;
+            document.getElementById('pwaBtn').style.backgroundColor = "#2ecc71";
         });
 
         document.getElementById('pwaBtn').addEventListener('click', async () => {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                await deferredPrompt.userChoice;
-                deferredPrompt = null;
-            } else {
-                document.getElementById('installGuide').style.display = 'flex';
-            }
+            if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt = null; }
+            else { alert("להתקנה: לחץ על 'הוסף למסך הבית' בתפריט הדפדפן"); }
         });
 
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js?v=4.5.0').then(reg => {
-                reg.onupdatefound = () => {
-                    const installingWorker = reg.installing;
-                    installingWorker.onstatechange = () => {
-                        if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            if(confirm("גרסה חדשה זמינה! לרענן עכשיו?")) location.reload();
+            navigator.serviceWorker.register('./sw.js?v=4.6.0').then(reg => {
+                reg.addEventListener('updatefound', () => {
+                    const newWorker = reg.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            location.reload(); 
                         }
-                    };
-                };
+                    });
+                });
             });
         }
     }
 
-    async function compressImage(file) {
-        return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = (e) => {
-                const img = new Image();
-                img.src = e.target.result;
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const MAX = 1000;
-                    let w = img.width, h = img.height;
-                    if (w > MAX) { h *= MAX / w; w = MAX; }
-                    canvas.width = w; canvas.height = h;
-                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                    resolve(canvas.toDataURL('image/jpeg', 0.7));
-                };
-            };
-        });
+    // פונקציית כיווץ משופרת למניעת תקיעות
+    async function processImages(files) {
+        const processed = [];
+        const status = document.getElementById('uploadStatus');
+        status.style.display = 'block';
+        
+        for (let file of files) {
+            const bitmap = await createImageBitmap(file);
+            const canvas = document.createElement('canvas');
+            const MAX_SIZE = 1200;
+            let w = bitmap.width, h = bitmap.height;
+            
+            if (w > h && w > MAX_SIZE) { h *= MAX_SIZE / w; w = MAX_SIZE; }
+            else if (h > MAX_SIZE) { w *= MAX_SIZE / h; h = MAX_SIZE; }
+            
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(bitmap, 0, 0, w, h);
+            processed.push(canvas.toDataURL('image/jpeg', 0.7));
+            bitmap.close();
+        }
+        status.style.display = 'none';
+        return processed;
     }
 
     async function save() {
         const n = document.getElementById('name').value, p = document.getElementById('price').value, id = document.getElementById('editId').value;
-        if(!n || !p) return alert("חובה שם ומחיר");
-        const btn = document.getElementById('saveBtn');
-        btn.disabled = true; btn.innerText = "מעבד...";
+        if(!n || !p) return alert("חובה למלא שם ומחיר");
 
-        const fileInput = document.getElementById('imgs');
+        const btn = document.getElementById('saveBtn');
+        btn.disabled = true;
+        
+        const files = document.getElementById('imgs').files;
         let images = [];
-        if (fileInput.files.length > 0) {
-            for (let f of fileInput.files) images.push(await compressImage(f));
+        
+        if (files.length > 0) {
+            images = await processImages(files);
         }
 
         const item = {
@@ -164,8 +158,9 @@
         if(id) db[db.findIndex(x=>x.id==id)] = item;
         else db.unshift(item);
 
-        updateDB();
-        btn.disabled = false; btn.innerText = "שמור ופרסם";
+        localStorage.setItem(DB_NAME, JSON.stringify(db));
+        render();
+        btn.disabled = false;
         goHome();
     }
 
@@ -197,15 +192,15 @@
             <div class="m-details">
                 <h2>${i.n}</h2><p class="m-price">₪${i.p}</p>
                 <div class="m-specs shadow"><p><strong>חומרים:</strong> ${i.m || '-'}</p><p>${i.d || '-'}</p></div>
-                <button class="btn-wa-big shadow" onclick="contactSeller('${i.n.replace(/'/g, "\\'")}', '${i.p}', ${i.id})">💬 צור קשר</button>
+                <button class="btn-wa-big shadow" onclick="contactSeller('${i.n.replace(/'/g, "\\'")}', '${i.p}', ${i.id})">💬 צור קשר לרכישה</button>
             </div>`;
         document.getElementById('viewModal').style.display = "block";
+        document.body.classList.add('no-scroll');
     }
 
     function contactSeller(n, p, id) {
         const url = `${window.location.href.split('?')[0]}?id=${id}`;
-        const msg = `היי אולג, אני מעוניין במוצר: *${n}* (₪${p}).\nלינק: ${url}`;
-        window.open(`https://wa.me/972${MY_PHONE.substring(1)}?text=${encodeURIComponent(msg)}`, '_blank');
+        window.open(`https://wa.me/972${MY_PHONE.substring(1)}?text=${encodeURIComponent('היי אולג, מעוניין ב: *' + n + '* (₪' + p + ')\nלינק: ' + url)}`, '_blank');
     }
 
     function editItem(id) {
@@ -215,17 +210,22 @@
         document.getElementById('price').value = i.p;
         document.getElementById('mat').value = i.m;
         document.getElementById('desc').value = i.d;
-        document.getElementById('formTitle').innerText = "עריכת מוצר";
+        document.getElementById('formTitle').innerText = "עריכה";
         document.getElementById('deleteBtn').style.display = 'block';
         document.getElementById('formModal').style.display = 'block';
+        document.body.classList.add('no-scroll');
     }
 
-    function deleteProduct() { if(confirm("למחוק?")) { db = db.filter(x => x.id != document.getElementById('editId').value); updateDB(); goHome(); } }
-    function toggleSold(id) { const idx = db.findIndex(x => x.id == id); db[idx].sold = !db[idx].sold; updateDB(); }
-    function updateDB() { localStorage.setItem(DB_NAME, JSON.stringify(db)); render(); }
+    function toggleSold(id) { 
+        const idx = db.findIndex(x => x.id == id); 
+        db[idx].sold = !db[idx].sold; 
+        localStorage.setItem(DB_NAME, JSON.stringify(db)); 
+        render(); 
+    }
+    function deleteProduct() { if(confirm("למחוק?")) { db = db.filter(x => x.id != document.getElementById('editId').value); localStorage.setItem(DB_NAME, JSON.stringify(db)); render(); goHome(); } }
     function goHome() { window.history.replaceState({}, '', window.location.href.split('?')[0]); document.querySelectorAll('.full-modal').forEach(m => m.style.display = 'none'); document.body.classList.remove('no-scroll'); }
-    function toggleForm() { resetForm(); document.getElementById('deleteBtn').style.display = 'none'; document.getElementById('formModal').style.display = 'block'; }
-    function resetForm() { ['editId','name','mat','price','desc','imgs'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value = ''; }); }
+    function toggleForm() { resetForm(); document.getElementById('deleteBtn').style.display = 'none'; document.getElementById('formModal').style.display = 'block'; document.body.classList.add('no-scroll'); }
+    function resetForm() { ['editId','name','mat','price','desc','imgs'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; }); }
     function exportData() {
         const a = document.createElement('a');
         a.href = URL.createObjectURL(new Blob([JSON.stringify(db)], {type: "application/json"}));
@@ -233,7 +233,7 @@
     }
     function importData(e) {
         const r = new FileReader();
-        r.onload = ev => { db = JSON.parse(ev.target.result); updateDB(); };
+        r.onload = ev => { db = JSON.parse(ev.target.result); localStorage.setItem(DB_NAME, JSON.stringify(db)); render(); };
         r.readAsText(e.target.files[0]);
     }
     function closeView() { goHome(); }
