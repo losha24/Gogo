@@ -1,4 +1,4 @@
-const CACHE_NAME = 'okar-v4.9.5';
+const CACHE_NAME = 'okar-v5.0.0';
 const ASSETS = ['./', './index.html', './style.css', './manifest.json', './logo.png'];
 
 self.addEventListener('install', e => {
@@ -7,14 +7,8 @@ self.addEventListener('install', e => {
 });
 
 self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(keys => Promise.all(
-      keys.map(k => { if (k !== CACHE_NAME) return caches.delete(k); })
-    ))
-  );
+  e.waitUntil(caches.keys().then(keys => Promise.all(keys.map(k => { if (k !== CACHE_NAME) return caches.delete(k); }))));
   return self.clients.claim();
 });
 
-self.addEventListener('fetch', e => {
-  e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
-});
+self.addEventListener('fetch', e => { e.respondWith(caches.match(e.request).then(r => r || fetch(e.request))); });
